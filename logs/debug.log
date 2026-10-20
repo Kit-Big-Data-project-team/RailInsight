@@ -1,0 +1,2 @@
+2026-10-20 10:41:07,667 DEBUG asyncio: Using proactor: IocpProactor
+2026-10-20 10:41:17,248 INFO railinsight.data.loader: Lignes vides retirées : 73
