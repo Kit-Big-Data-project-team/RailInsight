@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 5
 requires-python = ">=3.11"
 resolution-markers = [
     "python_full_version >= '3.14' and sys_platform == 'win32'",
@@ -2880,10 +2880,13 @@ name = "railinsight"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "certifi" },
+    { name = "filelock" },
     { name = "ipykernel" },
     { name = "jupyterlab" },
     { name = "matplotlib" },
     { name = "pandas" },
+    { name = "pillow" },
     { name = "plotly" },
     { name = "streamlit" },
 ]
@@ -2900,10 +2903,13 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "certifi", specifier = ">=2024.0.0" },
+    { name = "filelock", specifier = ">=3.13.0" },
     { name = "ipykernel", specifier = ">=6,<8" },
     { name = "jupyterlab", specifier = ">=4,<5" },
     { name = "matplotlib", specifier = ">=3.8,<4" },
     { name = "pandas", specifier = ">=2.2,<4" },
+    { name = "pillow", specifier = ">=10.3.0" },
     { name = "plotly", specifier = ">=7.1.0" },
     { name = "streamlit", specifier = ">=1.66.0" },
 ]

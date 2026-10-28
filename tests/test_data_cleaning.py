@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 
-from railinsight.data_cleaning import DataCleaningError, TGVDataset
+from railinsight.data.data_cleaning import DataCleaningError, TGVDataset
 
 
 def test_nettoyer_donnees(tmp_path):

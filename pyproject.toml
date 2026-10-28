@@ -10,6 +10,9 @@ dependencies = [
     "ipykernel>=6,<8",
     "streamlit>=1.66.0",
     "plotly>=7.1.0",
+    "certifi>=2024.0.0",
+    "filelock>=3.13.0",
+    "pillow>=10.3.0",
 ]
 
 [build-system]
