@@ -53,7 +53,33 @@
 
 > **TO COMPLETE: the question guiding your study**
 
+Pour installer le projet, exécutez ces commandes dans votre terminal :
+git clone <url-du-repo>
+cd RailInsight
+uv sync
+
+---
+
 ## 🧩 Usage <a name="usage"></a>
 
 > **TO COMPLETE: the question guiding your study**
 
+> ⚠️ **Alerte Architecture & Dépendance (Partie 2 - Socle du Projet) :** L'ensemble des analyses, des visualisations graphiques et de l'application Streamlit dépend entièrement du pipeline de nettoyage développé dans la Partie 2 (`src/railinsight/data_cleaning.py`). Avant de développer vos propres modules, assurez-vous que vos scripts s'appuient toujours sur le DataFrame propre et normalisé généré par la classe `TGVDataset`.
+
+### 1. Lancer le pipeline de nettoyage (Script Principal)
+Commande : uv run python src/railinsight/main.py
+
+### 2. Utilisation dans vos scripts d'analyse
+from railinsight.data_cleaning import TGVDataset, URL_SNCF, FICHIER_LOCAL
+
+Initialisation du gestionnaire de dataset (socle commun de l'équipe)
+dataset = TGVDataset(url=URL_SNCF, chemin_cache=FICHIER_LOCAL)
+
+Récupération du DataFrame propre pour vos analyses
+df_propre = dataset.nettoyer_donnees()
+
+### 3. Contrôle qualité et Tests (Obligatoire avant chaque push)
+Avant de proposer une fusion sur la branche principale, exécutez ces commandes :
+- Tests unitaires et couverture : uv run python -m pytest --cov=railinsight --cov-report=term-missing
+- Vérification du style et des imports : uv run python -m ruff check .
+- Formatage automatique : uv run python -m black .
