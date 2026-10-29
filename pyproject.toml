@@ -63,3 +63,9 @@ source = ["src"]
 show_missing = true
 fail_under = 5
 
+[tool.uv]
+override-dependencies = [
+    "pillow>=13.0.0",
+    "filelock>=4.2.1",
+    "certifi>=2026.10.18"
+]
