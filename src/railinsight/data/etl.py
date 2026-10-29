@@ -1,16 +1,17 @@
 import logging
 import os
 import sys
-from datetime import date
+from datetime import date, datetime
 
 import pandas as pd
 import requests
 from dotenv import load_dotenv
 from sqlalchemy import Engine, insert, text
 
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from database import db_table
-from database.conf_db import make_engine
+from railinsight.database import db_table
+from railinsight.database.conf_db import make_engine
+
+# sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -50,7 +51,7 @@ def fetch_data(api_url: str, since: date | None) -> list[dict] | None:
 
     params = {}
     if since is not None:
-        params["where"] = f'date > "{since:%Y-%m}"'
+        params["where"] = f'date > "{since:%Y-%m-%d}"' if isinstance(since, datetime) else f'date > "{since}"'
     try:
         response = requests.get(api_url, params=params, timeout=120)
         response.raise_for_status()
@@ -101,22 +102,25 @@ def insert_data(data: pd.DataFrame, engine: Engine) -> None:
         engine.dispose()
 
 
-def main():
-    engine = make_engine()
+def pipeline(engine: Engine | None):
+    if not engine:
+        engine = make_engine()
     last_record_date = last_loaded_month(engine)
     api_url = os.getenv("URl_SNCF_DATASET")
-    try:
-        data = fetch_data(api_url, last_record_date)
-
-    except Exception as e:
-        logger.error("Data retrieval failed. Stopping ETL : %s", e)
-
+    data = fetch_data(api_url, last_record_date)
+    if data is None:
+        logger.error("Data retrieval failed. Stopping ETL.")
         sys.exit(1)
-    df = transform(data)
-    if df.empty:
+    if not data:
         logger.info("No new data.")
         return
+
+    df = transform(data)
     insert_data(df, engine)
+
+
+def main():
+    pipeline(None)
 
 
 if __name__ == "__main__":

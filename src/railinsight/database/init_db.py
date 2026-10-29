@@ -1,7 +1,7 @@
 import logging
 
-import db_table
-from conf_db import make_engine
+from railinsight.database import db_table
+from railinsight.database.conf_db import make_engine
 
 logger = logging.getLogger(__name__)
 
