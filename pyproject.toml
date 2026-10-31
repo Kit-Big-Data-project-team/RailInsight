@@ -13,6 +13,10 @@ dependencies = [
     "certifi>=2024.0.0",
     "filelock>=3.13.0",
     "pillow>=10.3.0",
+    "requests>=2.34.2",
+    "sqlalchemy>=2.1.6",
+    "dotenv>=0.9.9",
+    "psycopg2-binary>=2.9.13",
 ]
 
 [build-system]
@@ -62,3 +66,9 @@ source = ["src"]
 show_missing = true
 fail_under = 5
 
+[tool.uv]
+override-dependencies = [
+    "pillow>=13.0.0",
+    "filelock>=4.2.1",
+    "certifi>=2026.10.18"
+]

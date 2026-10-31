@@ -34,6 +34,8 @@ jobs:
         run: uv run interrogate src
 
       - name: Run tests with coverage
+        env:
+          URl_SNCF_DATASET: ${{ secrets.URL_SNCF_DATASET }}
         run: uv run pytest
 
       - name: Audit dependencies
