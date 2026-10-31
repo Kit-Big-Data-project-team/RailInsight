@@ -11,8 +11,6 @@ from sqlalchemy import Engine, insert, text
 from railinsight.database import db_table
 from railinsight.database.conf_db import make_engine
 
-# sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 load_dotenv()
 logger = logging.getLogger(__name__)
 
@@ -47,6 +45,15 @@ COLUMNS = [
 
 
 def fetch_data(api_url: str, since: date | None) -> list[dict] | None:
+    """Fetch raw SNCF records from the API since the provided date.
+
+    Args:
+        api_url: The endpoint used to retrieve the regularity dataset.
+        since: Optional lower bound date. Only records newer than this date are returned.
+
+    Returns:
+        A list of raw API records, or None if the request fails.
+    """
     logger.info(f"Fetching data from API : {api_url}")
 
     params = {}
@@ -71,6 +78,14 @@ def fetch_data(api_url: str, since: date | None) -> list[dict] | None:
 
 
 def transform(data: list[dict]) -> pd.DataFrame:
+    """Convert the raw API payload into a DataFrame using the expected schema.
+
+    Args:
+        data: Raw records returned by the API.
+
+    Returns:
+        A DataFrame containing the normalized columns expected by the database.
+    """
     df = pd.DataFrame(data)
     # Convertir les NaN/NaT en None pour PostgreSQL.
     df["date"] = pd.to_datetime(df["date"]).dt.date
@@ -78,13 +93,26 @@ def transform(data: list[dict]) -> pd.DataFrame:
 
 
 def last_loaded_month(engine: Engine) -> date | None:
+    """Retrieves the date of the most recently recorded data from the database.
+
+    Args:
+        engine: SQLAlchemy engine connected to the target database.
+
+    Returns:
+        The latest date present in the table, or None if the table is empty.
+    """
     query_last_month = f"SELECT MAX(date) FROM {TABLE}"
     with engine.connect() as conn:
         return conn.execute(text(query_last_month)).scalar_one()
 
 
 def insert_data(data: pd.DataFrame, engine: Engine) -> None:
-    """Insert data into database."""
+    """Insert data into database.
+
+    Args:
+        data: DataFrame containing rows to persist.
+        engine: SQLAlchemy engine connected to the database.
+    """
 
     if data.empty:
         logger.info("No data to insert.")
@@ -103,6 +131,11 @@ def insert_data(data: pd.DataFrame, engine: Engine) -> None:
 
 
 def pipeline(engine: Engine | None):
+    """Run the ETL workflow: fetch new data, transform it, and write it to the DB.
+
+    Args:
+        engine: Optional SQLAlchemy engine. A new engine is created if omitted.
+    """
     if not engine:
         engine = make_engine()
     last_record_date = last_loaded_month(engine)
@@ -120,6 +153,7 @@ def pipeline(engine: Engine | None):
 
 
 def main():
+    """Execute the ETL pipeline with the default database configuration."""
     pipeline(None)
 
 

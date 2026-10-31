@@ -8,7 +8,11 @@ load_dotenv()
 
 
 def make_engine() -> Engine:
-    """Create source of database connectivity"""
+    """Create a SQLAlchemy engine for the configured PostgreSQL database.
+
+    Returns:
+        A database engine built from environment variables.
+    """
 
     url_object = URL.create(
         drivername="postgresql+psycopg2",
