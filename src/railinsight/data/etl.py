@@ -8,6 +8,7 @@ import requests
 from dotenv import load_dotenv
 from sqlalchemy import Engine, insert, text
 
+from railinsight.data.data_cleaning import nettoyer_donnees  # Import de la fonction de nettoyage
 from railinsight.database import db_table
 from railinsight.database.conf_db import make_engine
 
@@ -59,10 +60,25 @@ def fetch_data(api_url: str, since: date | None) -> list[dict] | None:
     params = {}
     if since is not None:
         params["where"] = f'date > "{since:%Y-%m-%d}"' if isinstance(since, datetime) else f'date > "{since}"'
+    # try:
+    #     response = requests.get(api_url, params=params, timeout=120)
+    #     response.raise_for_status()
+    #     data = response.json()
+    #     logger.info("Data successfully retrieved. \n HTTP Status : %d. \n Number of data : %d", response.status_code, len(data))
+    #     return data
     try:
         response = requests.get(api_url, params=params, timeout=120)
         response.raise_for_status()
-        data = response.json()
+        json_data = response.json()
+
+        # Extraction garantie de la liste sous 'results' si le format est un dictionnaire OpenDataSoft
+        if isinstance(json_data, dict):
+            data = json_data.get("results", [])
+        elif isinstance(json_data, list):
+            data = json_data
+        else:
+            data = []
+
         logger.info("Data successfully retrieved. \n HTTP Status : %d. \n Number of data : %d", response.status_code, len(data))
         return data
     except requests.exceptions.Timeout:
@@ -75,10 +91,22 @@ def fetch_data(api_url: str, since: date | None) -> list[dict] | None:
         logger.error("Failed to decode API response as JSON.")
 
     return None
+    # except requests.exceptions.Timeout:
+    #     logger.error("API request timed out.")
+    # except requests.exceptions.HTTPError as e:
+    #     logger.error("HTTP error occurred: %s", e)
+    # except requests.exceptions.RequestException as e:
+    #     logger.error("API request failed: %s", e)
+    # except ValueError:
+    #     logger.error("Failed to decode API response as JSON.")
+
+    # return None
 
 
 def transform(data: list[dict]) -> pd.DataFrame:
-    """Convert the raw API payload into a DataFrame using the expected schema.
+    """Convert and clean the raw API payload using nettoyer_donnees
+
+    and format it to match the expected database schema.
 
     Args:
         data: Raw records returned by the API.
@@ -86,10 +114,22 @@ def transform(data: list[dict]) -> pd.DataFrame:
     Returns:
         A DataFrame containing the normalized columns expected by the database.
     """
-    df = pd.DataFrame(data)
-    # Convertir les NaN/NaT en None pour PostgreSQL.
-    df["date"] = pd.to_datetime(df["date"]).dt.date
-    return df[COLUMNS]
+    df_clean = nettoyer_donnees(data)
+
+    if df_clean.empty:
+        return pd.DataFrame(columns=COLUMNS)
+
+    # Vérification stricte du schéma requis par la base de données (lève KeyError si une colonne manque)
+    for col in COLUMNS:
+        if col not in df_clean.columns:
+            raise KeyError(f"Missing expected column: {col}")
+
+    # Conversion de la date au format date pour insertion SQL
+    if "date" in df_clean.columns:
+        df_clean["date"] = pd.to_datetime(df_clean["date"]).dt.date
+
+    existing_columns = [col for col in COLUMNS if col in df_clean.columns]
+    return df_clean[existing_columns]
 
 
 def last_loaded_month(engine: Engine) -> date | None:
@@ -131,16 +171,18 @@ def insert_data(data: pd.DataFrame, engine: Engine) -> None:
 
 
 def pipeline(engine: Engine | None):
-    """Run the ETL workflow: fetch new data, transform it, and write it to the DB.
+    """Run the ETL workflow: fetch new data, clean it directly, and write it to the DB.
 
     Args:
         engine: Optional SQLAlchemy engine. A new engine is created if omitted.
     """
     if not engine:
         engine = make_engine()
+
     last_record_date = last_loaded_month(engine)
     api_url = os.getenv("URl_SNCF_DATASET")
     data = fetch_data(api_url, last_record_date)
+
     if data is None:
         logger.error("Data retrieval failed. Stopping ETL.")
         sys.exit(1)
