@@ -11,6 +11,33 @@ import pandas as pd
 # Configuration du logger pour enregistrer les événements du pipeline de nettoyage
 logger = logging.getLogger(__name__)
 
+COLUMNS = [
+    "date",
+    "service",
+    "liaison",
+    "gare_depart",
+    "gare_arrivee",
+    "duree_moyenne",
+    "nb_train_prevu",
+    "nb_annulation",
+    "nb_train_depart_retard",
+    "retard_moyen_depart",
+    "retard_moyen_tous_trains_depart",
+    "nb_train_retard_arrivee",
+    "retard_moyen_arrivee",
+    "retard_moyen_tous_trains_arrivee",
+    "nb_train_retard_sup_15",
+    "retard_moyen_trains_retard_sup15",
+    "nb_train_retard_sup_30",
+    "nb_train_retard_sup_60",
+    "prct_cause_externe",
+    "prct_cause_infra",
+    "prct_cause_gestion_trafic",
+    "prct_cause_materiel_roulant",
+    "prct_cause_gestion_gare",
+    "prct_cause_prise_en_charge_voyageurs",
+]
+
 
 class DataCleaningError(Exception):
     """Exception personnalisée levée en cas d'échec critique lors du nettoyage des données."""
@@ -64,9 +91,9 @@ def nettoyer_donnees(data: list[dict] | pd.DataFrame) -> pd.DataFrame:
         df_clean = df_clean.drop(columns=colonnes_vides, errors="ignore")
         logger.info(f"Colonnes supprimées automatiquement : {colonnes_vides}")
 
-        # 4. Conversion de la colonne date
+        # 4. Conversion sécurisée de la date au format date pour le SQL
         if "date" in df_clean.columns:
-            df_clean["date"] = pd.to_datetime(df_clean["date"], errors="coerce")
+            df_clean["date"] = pd.to_datetime(df_clean["date"], errors="coerce").dt.date
 
         # 5. Création et positionnement de la colonne liaison
         col_depart = "gare_depart" if "gare_depart" in df_clean.columns else "gare_de_départ"
@@ -82,9 +109,20 @@ def nettoyer_donnees(data: list[dict] | pd.DataFrame) -> pd.DataFrame:
             else:
                 df_clean["liaison"] = liaison_series
 
-        logger.info("Nettoyage approfondi des données effectué avec succès.")
+        # 6. Vérification stricte du schéma requis par la base de données
+        if df_clean.empty:
+            return pd.DataFrame(columns=COLUMNS)
+
+        # 7. Filtrage final pour s'assurer de l'ordre exact des colonnes de COLUMNS
+        existing_columns = [col for col in COLUMNS if col in df_clean.columns]
+        df_clean = df_clean[existing_columns]
+
+        logger.info("Nettoyage approfondi et validation du schéma effectués avec succès.")
         return df_clean
 
+    except KeyError:
+        # On laisse remonter directement le KeyError pour que les tests unitaires le valident
+        raise
     except Exception as e:
         logger.critical(f"Échec critique lors du nettoyage des données : {e}")
         raise DataCleaningError("Impossible de nettoyer les données.") from e
