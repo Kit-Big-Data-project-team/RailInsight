@@ -16,3 +16,5 @@ Thumbs.db
 __pycache__/
 # Document de référence local
 rapport_sncf.pdf
+# Fichiers de brouillon personnels
+Brouillon*

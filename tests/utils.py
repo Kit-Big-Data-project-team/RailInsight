@@ -4,7 +4,8 @@ from unittest.mock import MagicMock
 import requests
 from dotenv import load_dotenv
 
-from railinsight.data.etl import COLUMNS
+# from railinsight.data.etl import COLUMNS
+from railinsight.data.data_cleaning import COLUMNS
 
 load_dotenv()
 

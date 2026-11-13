@@ -15,6 +15,7 @@ regularite_tgv_table = Table(
     metadata,
     Column("date", Date, nullable=False),
     Column("service", String(100), nullable=False),
+    Column("liaison", String(255)),
     Column("gare_depart", String(255), nullable=False),
     Column("gare_arrivee", String(255), nullable=False),
     Column("duree_moyenne", Numeric(12, 2)),

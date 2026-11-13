@@ -10,7 +10,7 @@ le DataFrame pour les coéquipiers et les différentes vues.
 
 import logging
 
-from railinsight.data_cleaning import FICHIER_LOCAL, URL_SNCF, TGVDataset
+from railinsight.data.data_cleaning import FICHIER_LOCAL, URL_SNCF, TGVDataset
 from railinsight.logging_config import setup_logging
 
 # Configuration des logs pour observer le déroulement du nettoyage

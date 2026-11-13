@@ -14,7 +14,7 @@ from railinsight.viz.charts import late_rate_line
 
 @st.cache_data
 def load() -> TGVDataset:
-    return TGVDataset.from_csv("data/regularite-mensuelle-tgv-aqst.csv")
+    return TGVDataset.from_db()
 
 
 st.title("Vue d'ensemble du réseau TGV")
