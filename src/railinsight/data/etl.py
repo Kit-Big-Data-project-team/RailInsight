@@ -131,7 +131,14 @@ def pipeline(engine: Engine | None):
 
 def main():
     """Execute the ETL pipeline with the default database configuration."""
-    pipeline(None)
+    logger.info("Démarrage pipeline ETL...")
+    try:
+        pipeline(None)
+        logger.info("Pipeline ETL terminé avec succès.")
+    except Exception as e:
+        logger.error("Une erreur est survenue lors du traitement : %s", e)
+        raise
+    
 
 
 if __name__ == "__main__":
