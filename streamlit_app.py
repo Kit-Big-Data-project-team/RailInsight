@@ -17,5 +17,8 @@ def _init() -> bool:
 
 _init()
 
-pages = [st.Page("views/overview.py", title="Vue d'ensemble", default=True)]
+pages = [
+    st.Page("views/overview.py", title="Vue d'ensemble", default=True),
+    st.Page("views/history.py", title="Historique & évolution"),
+]
 st.navigation(pages).run()
