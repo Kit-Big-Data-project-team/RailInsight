@@ -1,5 +1,24 @@
 # Déploiement de RailInsight
 
+Deux options : **Docker** (tout en local / auto-hébergé, le plus simple pour démontrer) ou **cloud** (Supabase + Streamlit Community Cloud).
+
+## 0. Option Docker (recommandée pour une démo locale)
+
+Le dépôt fournit un stack complet : Postgres + l'application Streamlit, avec initialisation de la base et chargement des données **automatiques** au démarrage.
+
+1. Copier `.env.example` en `.env` et renseigner les variables (`DB_USERNAME`, `DB_PASSWORD`, `DB_NAME`, `DB_PORT`, `URl_SNCF_DATASET`). `DB_HOST` est géré par Compose.
+2. Lancer :
+   ```
+   docker compose up --build
+   ```
+3. Ouvrir l'application sur **http://localhost:8501**.
+
+Au démarrage, le conteneur `app` attend que la base soit prête (healthcheck), crée les tables, charge les données SNCF, puis sert l'application.
+
+---
+
+## Déploiement cloud
+
 Architecture cible : base **PostgreSQL hébergée sur Supabase** + application **Streamlit Community Cloud**.
 
 ## 1. Base de données (Supabase)

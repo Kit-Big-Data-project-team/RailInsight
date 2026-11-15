@@ -1,6 +1,6 @@
 services:
-  regularite_tgv_db:
-    image: postgres:17.10-alpine
+  db:
+    image: postgres:17-alpine
     env_file: .env
     environment:
       POSTGRES_USER: ${DB_USERNAME}
@@ -8,9 +8,26 @@ services:
       POSTGRES_DB: ${DB_NAME}
     ports:
       - "5432:5432"
-    restart: always
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    env_file: .env
+    environment:
+      # À l'intérieur du réseau Compose, la base est joignable par le nom du service.
+      DB_HOST: db
+      DB_PORT: 5432
+    ports:
+      - "8501:8501"
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
   postgres_data:
