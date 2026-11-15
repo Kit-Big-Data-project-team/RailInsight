@@ -138,7 +138,6 @@ def main():
     except Exception as e:
         logger.error("Une erreur est survenue lors du traitement : %s", e)
         raise
-    
 
 
 if __name__ == "__main__":
