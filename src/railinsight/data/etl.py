@@ -40,9 +40,10 @@ def fetch_data(api_url: str, since: date | None) -> list[dict] | None:
         response.raise_for_status()
         json_data = response.json()
 
-        # Extraction garantie de la liste sous 'results' si le format est un dictionnaire OpenDataSoft
+        # L'endpoint /exports/json renvoie directement une liste. Si une réponse
+        # paginée OpenDataSoft (/records) est utilisée, les lignes sont sous 'results'.
         if isinstance(json_data, dict):
-            data = [json_data]
+            data = json_data.get("results", [])
         else:
             data = json_data
 
