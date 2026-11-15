@@ -1,2 +1,6 @@
 # Conserver les octets des fichiers de données, y compris les fins de ligne.
 *.csv -text
+
+# Les scripts shell doivent rester en LF (sinon ils cassent dans un conteneur Linux).
+*.sh text eol=lf
+docker/entrypoint.sh text eol=lf
