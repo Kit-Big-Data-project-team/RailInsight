@@ -70,5 +70,7 @@ fail_under = 5
 override-dependencies = [
     "pillow>=13.0.0",
     "filelock>=4.2.1",
-    "certifi>=2026.10.18"
+    "certifi>=2026.10.18",
+    "tornado>=6.6.1",
+    "soupsieve>=4.0.0"
 ]
