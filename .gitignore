@@ -8,6 +8,10 @@ __pycache__/
 .env
 .env.*
 !.env.example
+# Secrets Streamlit (le vrai fichier ne doit pas être versionné)
+.streamlit/secrets.toml
+# Build de la documentation Sphinx
+docs/_build/
 .DS_Store
 Thumbs.db
 .ruff_cache/
