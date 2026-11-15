@@ -3,10 +3,15 @@ Le point d'entrée de l'application Streamlit : navigation et configuration gén
 """
 
 import os
+import sys
 
-import streamlit as st
+# Rendre le package importable même sans installation (ex. Streamlit Cloud, qui exécute
+# le dépôt tel quel sans `uv sync`).
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "src"))
 
-from railinsight.logging_config import setup_logging
+import streamlit as st  # noqa: E402
+
+from railinsight.logging_config import setup_logging  # noqa: E402
 
 st.set_page_config(page_title="RailInsight", layout="wide")
 
