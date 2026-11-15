@@ -86,14 +86,28 @@ class TGVDataset:
             logger.warning("La table de la base de données est vide.")
             return cls(df)
 
-        # Mapping des colonnes de la base vers le format interne standard
+        # Mapping des colonnes de la base vers le format interne standard.
+        # Contrat de données commun : toutes les pages (tâches 3/4/5/6) utilisent
+        # EXACTEMENT ces noms, afin d'éviter que chacun bricole les noms bruts.
         db_rename = {
             "gare_depart": "origin",
             "gare_arrivee": "destination",
             "nb_train_prevu": "scheduled",
             "nb_annulation": "cancelled",
+            "nb_train_depart_retard": "late_departure",
             "nb_train_retard_arrivee": "late_arrival",
             "nb_train_retard_sup_15": "late_15",
+            "nb_train_retard_sup_30": "late_30",
+            "nb_train_retard_sup_60": "late_60",
+            "retard_moyen_depart": "avg_delay_departure",
+            "retard_moyen_arrivee": "avg_delay_arrival",
+            "duree_moyenne": "avg_trip_duration",
+            "prct_cause_externe": "cause_external",
+            "prct_cause_infra": "cause_infra",
+            "prct_cause_gestion_trafic": "cause_traffic",
+            "prct_cause_materiel_roulant": "cause_rolling_stock",
+            "prct_cause_gestion_gare": "cause_station",
+            "prct_cause_prise_en_charge_voyageurs": "cause_passengers",
         }
 
         df = df.rename(columns=db_rename)
