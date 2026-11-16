@@ -2,7 +2,7 @@
 
 On résume chaque liaison sur toute la période : part de trains réellement arrivés
 à l'heure (hors annulations et retards), afin de classer les liaisons de la plus
-fiable à la moins fiable.
+fiable à la moins fiable et de comparer les services.
 """
 
 import pandas as pd
@@ -16,6 +16,21 @@ def route_reliability(df: pd.DataFrame) -> pd.DataFrame:
     """
     g = df.groupby("route")[["scheduled", "cancelled", "late_arrival"]].sum().reset_index()
 
+    scheduled = g["scheduled"].replace(0, pd.NA)
+    effective = (g["scheduled"] - g["cancelled"]).replace(0, pd.NA)
+
+    g["late_rate"] = g["late_arrival"] / effective
+    g["cancellation_rate"] = g["cancelled"] / scheduled
+    g["reliability_score"] = (g["scheduled"] - g["cancelled"] - g["late_arrival"]) / scheduled
+    return g
+
+
+def reliability_by_service(df: pd.DataFrame) -> pd.DataFrame:
+    """Fiabilité agrégée par service (National / International)."""
+    if "service" not in df.columns:
+        return pd.DataFrame(columns=["service", "scheduled", "late_rate", "cancellation_rate", "reliability_score"])
+
+    g = df.groupby("service")[["scheduled", "cancelled", "late_arrival"]].sum().reset_index()
     scheduled = g["scheduled"].replace(0, pd.NA)
     effective = (g["scheduled"] - g["cancelled"]).replace(0, pd.NA)
 
