@@ -1,8 +1,9 @@
 """Métriques de la page Historique & évolution (tâche 4).
 
-Évolution des retards et des annulations dans le temps, répartition des causes
-et saisonnalité. Toutes les fonctions sont pures : elles prennent le DataFrame
-normalisé (contrat de données) et renvoient un DataFrame prêt à visualiser.
+Évolution des retards et des annulations dans le temps, répartition des causes,
+sévérité des retards, comparaison des services et saisonnalité. Toutes les fonctions
+sont pures : elles prennent le DataFrame normalisé (contrat de données) et renvoient
+un DataFrame prêt à visualiser.
 """
 
 import pandas as pd
@@ -25,6 +26,26 @@ def monthly_delays_cancellations(df: pd.DataFrame) -> pd.DataFrame:
     late = monthly_late_rate(df)
     cancelled = cancellation_rate(df)
     return late.merge(cancelled, on="date")
+
+
+def punctuality_by_service(df: pd.DataFrame) -> pd.DataFrame:
+    """Taux de retard par mois et par service (National / International)."""
+    if "service" not in df.columns:
+        return pd.DataFrame(columns=["date", "service", "late_rate"])
+
+    g = df.groupby(["date", "service"])[["scheduled", "cancelled", "late_arrival"]].sum().reset_index()
+    effective = (g["scheduled"] - g["cancelled"]).replace(0, pd.NA)
+    g["late_rate"] = g["late_arrival"] / effective
+    return g[["date", "service", "late_rate"]]
+
+
+def delay_severity_over_time(df: pd.DataFrame) -> pd.DataFrame:
+    """Part des trains prévus en retard de plus de 15 / 30 / 60 minutes, par mois."""
+    g = df.groupby("date")[["scheduled", "late_15", "late_30", "late_60"]].sum().reset_index()
+    scheduled = g["scheduled"].replace(0, pd.NA)
+    for col in ("late_15", "late_30", "late_60"):
+        g[col] = g[col] / scheduled
+    return g[["date", "late_15", "late_30", "late_60"]]
 
 
 def cause_breakdown_over_time(df: pd.DataFrame) -> pd.DataFrame:
