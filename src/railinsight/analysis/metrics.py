@@ -25,3 +25,24 @@ def cancellation_rate(df: pd.DataFrame) -> pd.DataFrame:
     g = df.groupby("date")[["scheduled", "cancelled"]].sum()
     scheduled = g["scheduled"].replace(0, pd.NA)
     return (g["cancelled"] / scheduled).rename("cancellation_rate").reset_index()
+
+
+def monthly_disruption_rate(df: pd.DataFrame) -> pd.DataFrame:
+    """Calcule la part des trains prévus annulés ou arrivés en retard par mois.
+
+    Les annulations et les retards à l'arrivée sont des issues distinctes.
+    On additionne leurs effectifs avant de diviser par les trains prévus ;
+    additionner les taux de retard et d'annulation serait incorrect, car leurs
+    dénominateurs diffèrent. Chaque train prévu a ainsi le même poids.
+
+    Args:
+        df: Données normalisées avec date, scheduled, cancelled et late_arrival.
+            Les effectifs doivent être renseignés et cohérents.
+
+    Returns:
+        Tableau avec date et disruption_rate (fraction entre 0 et 1).
+        Un dénominateur nul produit une valeur manquante, et non un taux nul.
+    """
+    grouped = df.groupby("date")[["scheduled", "cancelled", "late_arrival"]].sum()
+    scheduled = grouped["scheduled"].replace(0, float("nan"))
+    return ((grouped["cancelled"] + grouped["late_arrival"]) / scheduled).rename("disruption_rate").reset_index()
