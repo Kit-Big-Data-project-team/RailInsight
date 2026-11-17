@@ -1,4 +1,4 @@
-"""Métriques de la page Historique & évolution (tâche 4).
+"""Métriques de la page Historique & évolution.
 
 Évolution des retards et des annulations dans le temps, répartition des causes,
 sévérité, comparaison des services et saisonnalité. Toutes les fonctions sont pures : elles prennent le DataFrame

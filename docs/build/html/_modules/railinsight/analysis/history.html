@@ -1,0 +1,413 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="fr" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>railinsight.analysis.history &mdash; Documentation RailInsight </title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=d1a510d7"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/translations.js?v=e6b791cb"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Recherche" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            RailInsight
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Rechercher docs" aria-label="Rechercher docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Documentation :</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../views.html">Pages Streamlit</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">RailInsight</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Code du module</a></li>
+      <li class="breadcrumb-item active">railinsight.analysis.history</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Code source de railinsight.analysis.history</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Métriques de la page Historique &amp; évolution.</span>
+
+<span class="sd">Évolution des retards et des annulations dans le temps, répartition des causes,</span>
+<span class="sd">sévérité, comparaison des services et saisonnalité. Toutes les fonctions sont pures : elles prennent le DataFrame</span>
+<span class="sd">normalisé (contrat de données) et renvoient un DataFrame prêt à visualiser.</span>
+<span class="sd">"""</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">railinsight.analysis.metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">cancellation_rate</span><span class="p">,</span> <span class="n">monthly_disruption_rate</span><span class="p">,</span> <span class="n">monthly_late_rate</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">railinsight.exceptions</span><span class="w"> </span><span class="kn">import</span> <span class="n">DataValidationError</span>
+
+<span class="c1"># Colonnes de causes (part en %) issues du contrat de données.</span>
+<span class="n">CAUSE_COLUMNS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">"cause_external"</span><span class="p">,</span>
+    <span class="s2">"cause_infra"</span><span class="p">,</span>
+    <span class="s2">"cause_traffic"</span><span class="p">,</span>
+    <span class="s2">"cause_rolling_stock"</span><span class="p">,</span>
+    <span class="s2">"cause_station"</span><span class="p">,</span>
+    <span class="s2">"cause_passengers"</span><span class="p">,</span>
+<span class="p">]</span>
+
+
+<div class="viewcode-block" id="monthly_delays_cancellations">
+<a class="viewcode-back" href="../../../modules.html#railinsight.analysis.history.monthly_delays_cancellations">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">monthly_delays_cancellations</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Réunit les trois taux mensuels, exprimés en fractions.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Données normalisées avec date et effectifs des trains prévus,</span>
+<span class="sd">            annulés et arrivés en retard.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tableau avec date, late_rate, cancellation_rate et disruption_rate.</span>
+<span class="sd">        Le retard porte sur les trains ayant circulé ; les deux autres taux</span>
+<span class="sd">        portent sur les trains prévus. Les courbes ne sont pas additives.</span>
+<span class="sd">        Plusieurs liaisons peuvent compter le même TGV : leur regroupement</span>
+<span class="sd">        décrit les enregistrements disponibles, pas les taux officiels du réseau.</span>
+<span class="sd">    """</span>
+    <span class="n">late</span> <span class="o">=</span> <span class="n">monthly_late_rate</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="n">cancelled</span> <span class="o">=</span> <span class="n">cancellation_rate</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="n">disrupted</span> <span class="o">=</span> <span class="n">monthly_disruption_rate</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">late</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">cancelled</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s2">"date"</span><span class="p">)</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">disrupted</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s2">"date"</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># Tolérance en points de pourcentage : arrondis de publication, sans renormalisation.</span>
+<span class="n">CAUSE_TOTAL_TOLERANCE</span> <span class="o">=</span> <span class="mf">0.1</span>
+<span class="n">UNALLOCATED_CAUSE</span> <span class="o">=</span> <span class="s2">"cause_unallocated"</span>
+
+
+<div class="viewcode-block" id="cause_breakdown_over_time">
+<a class="viewcode-back" href="../../../modules.html#railinsight.analysis.history.cause_breakdown_over_time">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">cause_breakdown_over_time</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Agrège les causes déclarées et leur part non ventilée, par mois.</span>
+
+<span class="sd">    Hypothèse approuvée : les pourcentages décrivent une répartition des retards</span>
+<span class="sd">    à l'arrivée ; leur pondération utilise donc late_arrival. Les métadonnées</span>
+<span class="sd">    SNCF ne confirment pas explicitement ce dénominateur. Le résultat est une</span>
+<span class="sd">    estimation sur les enregistrements des liaisons, pas un indicateur officiel.</span>
+
+<span class="sd">    Le complément à 100 est calculé pour chaque enregistrement avant pondération.</span>
+<span class="sd">    Une cause manquante n'ajoute aucune part connue ; elle reste dans le complément.</span>
+<span class="sd">    Les six parts publiées ne sont jamais renormalisées. Un écart de 0,1 point</span>
+<span class="sd">    au maximum est toléré comme arrondi, sans créer de part non ventilée.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Données normalisées avec date, late_arrival et les six CAUSE_COLUMNS.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tableau avec date, les six causes et cause_unallocated, en pourcentages</span>
+<span class="sd">        de 0 à 100. Sans retard, toutes les parts restent manquantes.</span>
+<span class="sd">        Une sélection vide conserve ces mêmes colonnes.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        DataValidationError: Effectif manquant ou négatif, pourcentage hors de</span>
+<span class="sd">            [0, 100], ou somme dépassant 100 au-delà de la tolérance d'arrondi.</span>
+<span class="sd">    """</span>
+    <span class="n">tmp</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">tmp</span><span class="p">[</span><span class="s2">"date"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">tmp</span><span class="p">[</span><span class="s2">"date"</span><span class="p">])</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="s2">"late_arrival"</span><span class="p">]</span>
+    <span class="n">values</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="n">CAUSE_COLUMNS</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">weights</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">()</span> <span class="ow">or</span> <span class="p">(</span><span class="n">weights</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="n">DataValidationError</span><span class="p">(</span><span class="s2">"Les effectifs de retard doivent être renseignés et positifs ou nuls."</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">((</span><span class="n">values</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span> <span class="p">(</span><span class="n">values</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">))</span><span class="o">.</span><span class="n">any</span><span class="p">()</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="n">DataValidationError</span><span class="p">(</span><span class="s2">"Les pourcentages des causes doivent être compris entre 0 et 100."</span><span class="p">)</span>
+    <span class="n">totals</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">totals</span> <span class="o">&gt;</span> <span class="mi">100</span> <span class="o">+</span> <span class="n">CAUSE_TOTAL_TOLERANCE</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="n">DataValidationError</span><span class="p">(</span><span class="s2">"La somme des causes dépasse 100 </span><span class="si">% a</span><span class="s2">u-delà de la tolérance de 0,1 point."</span><span class="p">)</span>
+    <span class="n">residual</span> <span class="o">=</span> <span class="p">(</span><span class="mi">100</span> <span class="o">-</span> <span class="n">totals</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">lower</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">tmp</span><span class="p">[</span><span class="n">UNALLOCATED_CAUSE</span><span class="p">]</span> <span class="o">=</span> <span class="n">residual</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">residual</span> <span class="o">&gt;</span> <span class="n">CAUSE_TOTAL_TOLERANCE</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="o">*</span><span class="n">CAUSE_COLUMNS</span><span class="p">,</span> <span class="n">UNALLOCATED_CAUSE</span><span class="p">]</span>
+    <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">date</span><span class="p">,</span> <span class="n">group</span> <span class="ow">in</span> <span class="n">tmp</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"date"</span><span class="p">):</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="s2">"late_arrival"</span><span class="p">]</span>
+        <span class="n">total</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="n">shares</span> <span class="o">=</span> <span class="n">group</span><span class="p">[</span><span class="n">columns</span><span class="p">]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">total</span> <span class="k">if</span> <span class="n">total</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="s2">"nan"</span><span class="p">),</span> <span class="n">index</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span>
+        <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">"date"</span><span class="p">:</span> <span class="n">date</span><span class="p">,</span> <span class="o">**</span><span class="n">shares</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()})</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">"date"</span><span class="p">,</span> <span class="o">*</span><span class="n">columns</span><span class="p">])</span></div>
+
+
+
+<div class="viewcode-block" id="seasonality">
+<a class="viewcode-back" href="../../../modules.html#railinsight.analysis.history.seasonality">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">seasonality</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">complete_years_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Compare les mois de l'année par rapports de sommes des effectifs.</span>
+
+<span class="sd">    Les années complètes sont déterminées sur la sélection courante : chaque</span>
+<span class="sd">    année doit contenir les douze mois. Aucun mois ni aucune année manquante</span>
+<span class="sd">    n'est imputé. Les années exceptionnelles, dont 2020, ne sont pas exclues.</span>
+<span class="sd">    Ce descriptif ne démontre pas un effet saisonnier récurrent ou causal.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Données normalisées avec date, scheduled, cancelled et late_arrival.</span>
+<span class="sd">        complete_years_only: Conserver uniquement les années couvrant douze mois.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tableau avec month, les trois taux et n_years (années contributrices).</span>
+<span class="sd">        Un dénominateur nul donne une valeur manquante. Sans année complète,</span>
+<span class="sd">        le résultat par défaut est vide ; aucun changement de méthode n'est effectué.</span>
+<span class="sd">    """</span>
+    <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"month"</span><span class="p">,</span> <span class="s2">"late_rate"</span><span class="p">,</span> <span class="s2">"cancellation_rate"</span><span class="p">,</span> <span class="s2">"disruption_rate"</span><span class="p">,</span> <span class="s2">"n_years"</span><span class="p">]</span>
+    <span class="n">tmp</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">tmp</span><span class="p">[</span><span class="s2">"date"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">tmp</span><span class="p">[</span><span class="s2">"date"</span><span class="p">])</span>
+    <span class="n">tmp</span><span class="p">[</span><span class="s2">"year"</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="s2">"date"</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">year</span>
+    <span class="n">tmp</span><span class="p">[</span><span class="s2">"month"</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="s2">"date"</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">month</span>
+    <span class="k">if</span> <span class="n">complete_years_only</span><span class="p">:</span>
+        <span class="n">coverage</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"year"</span><span class="p">)[</span><span class="s2">"month"</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span>
+        <span class="n">tmp</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="n">tmp</span><span class="p">[</span><span class="s2">"year"</span><span class="p">]</span><span class="o">.</span><span class="n">isin</span><span class="p">(</span><span class="n">coverage</span><span class="p">[</span><span class="n">coverage</span> <span class="o">==</span> <span class="mi">12</span><span class="p">]</span><span class="o">.</span><span class="n">index</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="n">tmp</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span>
+    <span class="n">grouped</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"month"</span><span class="p">)[[</span><span class="s2">"scheduled"</span><span class="p">,</span> <span class="s2">"cancelled"</span><span class="p">,</span> <span class="s2">"late_arrival"</span><span class="p">]]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">operated</span> <span class="o">=</span> <span class="p">(</span><span class="n">grouped</span><span class="p">[</span><span class="s2">"scheduled"</span><span class="p">]</span> <span class="o">-</span> <span class="n">grouped</span><span class="p">[</span><span class="s2">"cancelled"</span><span class="p">])</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"nan"</span><span class="p">))</span>
+    <span class="n">scheduled</span> <span class="o">=</span> <span class="n">grouped</span><span class="p">[</span><span class="s2">"scheduled"</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"nan"</span><span class="p">))</span>
+    <span class="n">grouped</span><span class="p">[</span><span class="s2">"late_rate"</span><span class="p">]</span> <span class="o">=</span> <span class="n">grouped</span><span class="p">[</span><span class="s2">"late_arrival"</span><span class="p">]</span> <span class="o">/</span> <span class="n">operated</span>
+    <span class="n">grouped</span><span class="p">[</span><span class="s2">"cancellation_rate"</span><span class="p">]</span> <span class="o">=</span> <span class="n">grouped</span><span class="p">[</span><span class="s2">"cancelled"</span><span class="p">]</span> <span class="o">/</span> <span class="n">scheduled</span>
+    <span class="n">grouped</span><span class="p">[</span><span class="s2">"disruption_rate"</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">grouped</span><span class="p">[</span><span class="s2">"cancelled"</span><span class="p">]</span> <span class="o">+</span> <span class="n">grouped</span><span class="p">[</span><span class="s2">"late_arrival"</span><span class="p">])</span> <span class="o">/</span> <span class="n">scheduled</span>
+    <span class="n">grouped</span><span class="p">[</span><span class="s2">"n_years"</span><span class="p">]</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"month"</span><span class="p">)[</span><span class="s2">"year"</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">grouped</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()[</span><span class="n">columns</span><span class="p">]</span></div>
+
+
+
+<div class="viewcode-block" id="punctuality_by_service">
+<a class="viewcode-back" href="../../../modules.html#railinsight.analysis.history.punctuality_by_service">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">punctuality_by_service</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Compare les taux mensuels par service, selon la contribution d'Abdelmounaim.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Données normalisées avec date, service et effectifs de circulation.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tableau date, service et late_rate, calculé sur les trains ayant circulé.</span>
+<span class="sd">        Sans colonne service, le tableau est vide. Les écarts descriptifs peuvent</span>
+<span class="sd">        refléter des différences de liaisons et de durées, sans établir de causalité.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="s2">"service"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">"date"</span><span class="p">,</span> <span class="s2">"service"</span><span class="p">,</span> <span class="s2">"late_rate"</span><span class="p">])</span>
+
+    <span class="n">g</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">"date"</span><span class="p">,</span> <span class="s2">"service"</span><span class="p">])[[</span><span class="s2">"scheduled"</span><span class="p">,</span> <span class="s2">"cancelled"</span><span class="p">,</span> <span class="s2">"late_arrival"</span><span class="p">]]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+    <span class="n">effective</span> <span class="o">=</span> <span class="p">(</span><span class="n">g</span><span class="p">[</span><span class="s2">"scheduled"</span><span class="p">]</span> <span class="o">-</span> <span class="n">g</span><span class="p">[</span><span class="s2">"cancelled"</span><span class="p">])</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">NA</span><span class="p">)</span>
+    <span class="n">g</span><span class="p">[</span><span class="s2">"late_rate"</span><span class="p">]</span> <span class="o">=</span> <span class="n">g</span><span class="p">[</span><span class="s2">"late_arrival"</span><span class="p">]</span> <span class="o">/</span> <span class="n">effective</span>
+    <span class="k">return</span> <span class="n">g</span><span class="p">[[</span><span class="s2">"date"</span><span class="p">,</span> <span class="s2">"service"</span><span class="p">,</span> <span class="s2">"late_rate"</span><span class="p">]]</span></div>
+
+
+
+<div class="viewcode-block" id="delay_severity_over_time">
+<a class="viewcode-back" href="../../../modules.html#railinsight.analysis.history.delay_severity_over_time">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">delay_severity_over_time</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Adapte les seuils de sévérité d'Abdelmounaim sans corriger les données brutes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Données normalisées avec date, scheduled, late_15, late_30 et late_60.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tableau mensuel des trois parts rapportées aux trains prévus. Si un</span>
+<span class="sd">        effectif d'un seuil est manquant ou négatif dans un mois, le résultat de</span>
+<span class="sd">        ce mois pour ce seul seuil est manquant. Les autres seuils sont conservés.</span>
+<span class="sd">        Un dénominateur nul donne aussi une valeur manquante. Les seuils sont</span>
+<span class="sd">        cumulatifs et leurs parts ne doivent pas être additionnées.</span>
+<span class="sd">    """</span>
+    <span class="n">thresholds</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"late_15"</span><span class="p">,</span> <span class="s2">"late_30"</span><span class="p">,</span> <span class="s2">"late_60"</span><span class="p">]</span>
+    <span class="n">grouped</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"date"</span><span class="p">)[[</span><span class="s2">"scheduled"</span><span class="p">,</span> <span class="o">*</span><span class="n">thresholds</span><span class="p">]]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">min_count</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">scheduled</span> <span class="o">=</span> <span class="n">grouped</span><span class="p">[</span><span class="s2">"scheduled"</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"nan"</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">thresholds</span><span class="p">:</span>
+        <span class="n">invalid</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">invalid</span><span class="o">=</span><span class="n">df</span><span class="p">[</span><span class="n">column</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span> <span class="o">|</span> <span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"date"</span><span class="p">)[</span><span class="s2">"invalid"</span><span class="p">]</span><span class="o">.</span><span class="n">any</span><span class="p">()</span>
+        <span class="n">grouped</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">grouped</span><span class="p">[</span><span class="n">column</span><span class="p">]</span> <span class="o">/</span> <span class="n">scheduled</span><span class="p">)</span><span class="o">.</span><span class="n">mask</span><span class="p">(</span><span class="n">invalid</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">grouped</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()[[</span><span class="s2">"date"</span><span class="p">,</span> <span class="o">*</span><span class="n">thresholds</span><span class="p">]]</span></div>
+
+
+
+<div class="viewcode-block" id="severity_source_issues">
+<a class="viewcode-back" href="../../../modules.html#railinsight.analysis.history.severity_source_issues">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">severity_source_issues</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Expose les valeurs négatives ou absentes des seuils, sans modifier la source.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Données normalisées avec les seuils de sévérité.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Tableau des anomalies avec date, liaison et service si disponibles,</span>
+<span class="sd">        seuil et valeur brute. Les valeurs servent au diagnostic et non à un calcul.</span>
+<span class="sd">    """</span>
+    <span class="n">identifiers</span> <span class="o">=</span> <span class="p">[</span><span class="n">column</span> <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"date"</span><span class="p">,</span> <span class="s2">"route"</span><span class="p">,</span> <span class="s2">"service"</span><span class="p">)</span> <span class="k">if</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">df</span><span class="p">]</span>
+    <span class="n">long</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">melt</span><span class="p">(</span><span class="n">id_vars</span><span class="o">=</span><span class="n">identifiers</span><span class="p">,</span> <span class="n">value_vars</span><span class="o">=</span><span class="p">[</span><span class="s2">"late_15"</span><span class="p">,</span> <span class="s2">"late_30"</span><span class="p">,</span> <span class="s2">"late_60"</span><span class="p">],</span> <span class="n">var_name</span><span class="o">=</span><span class="s2">"seuil"</span><span class="p">,</span> <span class="n">value_name</span><span class="o">=</span><span class="s2">"valeur_source"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">long</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">long</span><span class="p">[</span><span class="s2">"valeur_source"</span><span class="p">]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span> <span class="o">|</span> <span class="p">(</span><span class="n">long</span><span class="p">[</span><span class="s2">"valeur_source"</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">)]</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="history_period_summary">
+<a class="viewcode-back" href="../../../modules.html#railinsight.analysis.history.history_period_summary">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">history_period_summary</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Calcule les indicateurs de synthèse ajoutés par Abdelmounaim, hors interface.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Enregistrements normalisés de la période et de la liaison sélectionnées.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Effectif prévu et trois taux sur la période, calculés après addition des</span>
+<span class="sd">        effectifs. Les taux ne sont pas des moyennes arithmétiques des mois.</span>
+<span class="sd">        Un dénominateur nul produit None.</span>
+<span class="sd">    """</span>
+    <span class="n">scheduled</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">"scheduled"</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+    <span class="n">cancelled</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">"cancelled"</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+    <span class="n">late</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">"late_arrival"</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+    <span class="n">operated</span> <span class="o">=</span> <span class="n">scheduled</span> <span class="o">-</span> <span class="n">cancelled</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"scheduled"</span><span class="p">:</span> <span class="n">scheduled</span><span class="p">,</span>
+        <span class="s2">"late_rate"</span><span class="p">:</span> <span class="n">late</span> <span class="o">/</span> <span class="n">operated</span> <span class="k">if</span> <span class="n">operated</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"cancellation_rate"</span><span class="p">:</span> <span class="n">cancelled</span> <span class="o">/</span> <span class="n">scheduled</span> <span class="k">if</span> <span class="n">scheduled</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"disruption_rate"</span><span class="p">:</span> <span class="p">(</span><span class="n">cancelled</span> <span class="o">+</span> <span class="n">late</span><span class="p">)</span> <span class="o">/</span> <span class="n">scheduled</span> <span class="k">if</span> <span class="n">scheduled</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="history_trend_observations">
+<a class="viewcode-back" href="../../../modules.html#railinsight.analysis.history.history_trend_observations">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">history_trend_observations</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Extrait des constats descriptifs sur la sélection, sans expliquer leurs causes.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Données normalisées de la liaison et de la période sélectionnées.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Nombre de mois observés et calculables, taux maximal de perturbation,</span>
+<span class="sd">        tous les mois ex aequo et leurs effectifs, indicateur de taux constant,</span>
+<span class="sd">        et parts des annulations et retards dans les perturbations de la période.</span>
+<span class="sd">        Ces deux dernières parts ont le même dénominateur : annulés + retards.</span>
+<span class="sd">        Sans perturbation, elles restent manquantes. Les mois à dénominateur nul</span>
+<span class="sd">        sont exclus du maximum et aucun mois absent n'est reconstitué.</span>
+<span class="sd">    """</span>
+    <span class="n">tmp</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">tmp</span><span class="p">[</span><span class="s2">"date"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">tmp</span><span class="p">[</span><span class="s2">"date"</span><span class="p">])</span>
+    <span class="n">monthly</span> <span class="o">=</span> <span class="n">monthly_delays_cancellations</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"date"</span><span class="p">)[[</span><span class="s2">"scheduled"</span><span class="p">,</span> <span class="s2">"cancelled"</span><span class="p">,</span> <span class="s2">"late_arrival"</span><span class="p">]]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+    <span class="n">monthly</span> <span class="o">=</span> <span class="n">monthly</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s2">"date"</span><span class="p">)</span>
+    <span class="n">valid</span> <span class="o">=</span> <span class="n">monthly</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">"disruption_rate"</span><span class="p">])</span>
+    <span class="n">maximum</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">valid</span><span class="p">[</span><span class="s2">"disruption_rate"</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">())</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">valid</span><span class="o">.</span><span class="n">empty</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">peaks</span> <span class="o">=</span> <span class="n">valid</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">valid</span><span class="p">[</span><span class="s2">"disruption_rate"</span><span class="p">]</span> <span class="o">==</span> <span class="n">maximum</span><span class="p">]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">cancelled</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tmp</span><span class="p">[</span><span class="s2">"cancelled"</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+    <span class="n">late</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tmp</span><span class="p">[</span><span class="s2">"late_arrival"</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+    <span class="n">disrupted</span> <span class="o">=</span> <span class="n">cancelled</span> <span class="o">+</span> <span class="n">late</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"n_months"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">monthly</span><span class="p">),</span>
+        <span class="s2">"n_valid_months"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">valid</span><span class="p">),</span>
+        <span class="s2">"peak_disruption_rate"</span><span class="p">:</span> <span class="n">maximum</span><span class="p">,</span>
+        <span class="s2">"peak_months"</span><span class="p">:</span> <span class="n">peaks</span><span class="p">[[</span><span class="s2">"date"</span><span class="p">,</span> <span class="s2">"scheduled"</span><span class="p">,</span> <span class="s2">"cancelled"</span><span class="p">,</span> <span class="s2">"late_arrival"</span><span class="p">]],</span>
+        <span class="s2">"constant_rate"</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">valid</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">valid</span><span class="p">[</span><span class="s2">"disruption_rate"</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span><span class="p">,</span>
+        <span class="s2">"disrupted_count"</span><span class="p">:</span> <span class="n">disrupted</span><span class="p">,</span>
+        <span class="s2">"cancelled_share"</span><span class="p">:</span> <span class="n">cancelled</span> <span class="o">/</span> <span class="n">disrupted</span> <span class="k">if</span> <span class="n">disrupted</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"late_share"</span><span class="p">:</span> <span class="n">late</span> <span class="o">/</span> <span class="n">disrupted</span> <span class="k">if</span> <span class="n">disrupted</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="history_cause_observations">
+<a class="viewcode-back" href="../../../modules.html#railinsight.analysis.history.history_cause_observations">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">history_cause_observations</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">object</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Résume les parts déclarées sur la période selon la pondération approuvée.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Données normalisées avec date, late_arrival et les six causes.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Toutes les catégories déclarées ex aequo pour la plus grande part,</span>
+<span class="sd">        cette part en pourcentage, et la part non ventilée de la période.</span>
+<span class="sd">        Les parts mensuelles sont pondérées par leurs effectifs de retards,</span>
+<span class="sd">        sans moyenne simple entre mois ni redistribution de la part inconnue.</span>
+<span class="sd">        Sans retard, les parts sont manquantes et aucune catégorie n'est désignée.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        DataValidationError: Données incompatibles avec le contrat des causes,</span>
+<span class="sd">            selon les mêmes règles que cause_breakdown_over_time.</span>
+<span class="sd">    """</span>
+    <span class="n">tmp</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">tmp</span><span class="p">[</span><span class="s2">"date"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">tmp</span><span class="p">[</span><span class="s2">"date"</span><span class="p">])</span>
+    <span class="n">monthly</span> <span class="o">=</span> <span class="n">cause_breakdown_over_time</span><span class="p">(</span><span class="n">tmp</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">monthly</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"leaders"</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">"largest_reported_share"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"unallocated_share"</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="n">tmp</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"date"</span><span class="p">)[</span><span class="s2">"late_arrival"</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+    <span class="n">weighted</span> <span class="o">=</span> <span class="n">monthly</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s2">"date"</span><span class="p">)</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="n">weighted</span><span class="p">[</span><span class="s2">"late_arrival"</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">total</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"leaders"</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">"largest_reported_share"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"unallocated_share"</span><span class="p">:</span> <span class="kc">None</span><span class="p">}</span>
+    <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="o">*</span><span class="n">CAUSE_COLUMNS</span><span class="p">,</span> <span class="n">UNALLOCATED_CAUSE</span><span class="p">]</span>
+    <span class="n">shares</span> <span class="o">=</span> <span class="n">weighted</span><span class="p">[</span><span class="n">columns</span><span class="p">]</span><span class="o">.</span><span class="n">multiply</span><span class="p">(</span><span class="n">weighted</span><span class="p">[</span><span class="s2">"late_arrival"</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">total</span>
+    <span class="n">known</span> <span class="o">=</span> <span class="n">shares</span><span class="p">[</span><span class="n">CAUSE_COLUMNS</span><span class="p">]</span>
+    <span class="n">largest</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">known</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+    <span class="n">leaders</span> <span class="o">=</span> <span class="n">known</span><span class="o">.</span><span class="n">index</span><span class="p">[</span><span class="n">known</span> <span class="o">==</span> <span class="n">largest</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="k">if</span> <span class="n">largest</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="p">[]</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"leaders"</span><span class="p">:</span> <span class="n">leaders</span><span class="p">,</span> <span class="s2">"largest_reported_share"</span><span class="p">:</span> <span class="n">largest</span><span class="p">,</span> <span class="s2">"unallocated_share"</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="n">shares</span><span class="p">[</span><span class="n">UNALLOCATED_CAUSE</span><span class="p">])}</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Droits d'auteur .</p>
+  </div>
+
+  Compilé avec <a href="https://www.sphinx-doc.org/">Sphinx</a> en utilisant un
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">thème</a>
+    fourni par <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

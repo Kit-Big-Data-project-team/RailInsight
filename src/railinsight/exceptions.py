@@ -19,3 +19,9 @@ class PeriodOutOfRangeError(RailInsightError):
 
 class DataValidationError(RailInsightError):
     """Le fichier de données est invalide (colonnes manquantes...)."""
+
+
+class DataCleaningError(RailInsightError):
+    """Exception personnalisée levée en cas d'échec critique lors du nettoyage des données."""
+
+    pass

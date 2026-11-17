@@ -27,7 +27,7 @@ def test_unallocated_cause_is_grey_and_zero_delay_month_is_explicit():
     df = pd.DataFrame({"date": ["2026-01-01", "2026-02-01"], "late_arrival": [10, 0], **{c: [0.0, 0.0] for c in CAUSE_COLUMNS}})
     fig = cause_area(cause_breakdown_over_time(df))
     grey = next(trace for trace in fig.data if trace.name == "Part non ventilée dans les données")
-    assert grey.line.color == "#9CA3AF"
+    assert grey.line.color == "#B4BFCD"
     assert grey.y[0] == 100.0
     assert pd.isna(grey.y[1])
     assert any(annotation.text == "Aucun retard enregistré" for annotation in fig.layout.annotations)

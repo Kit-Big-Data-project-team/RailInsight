@@ -87,7 +87,7 @@ class TGVDataset:
             return cls(df)
 
         # Mapping des colonnes de la base vers le format interne standard.
-        # Contrat de données commun : toutes les pages (tâches 3/4/5/6) utilisent
+        # Contrat de données commun : toutes les pages utilisent
         # EXACTEMENT ces noms, afin d'éviter que chacun bricole les noms bruts.
         db_rename = {
             "gare_depart": "origin",

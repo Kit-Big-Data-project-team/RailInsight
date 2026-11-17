@@ -1,4 +1,4 @@
-"""Tests des métriques de la page Historique & évolution (tâche 4)."""
+"""Tests des métriques de la page Historique & évolution."""
 
 import pandas as pd
 import pytest

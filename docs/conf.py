@@ -3,6 +3,7 @@
 import os
 import sys
 
+
 # Rendre le package importable pour l'autodoc.
 sys.path.insert(0, os.path.abspath("../src"))
 
@@ -17,8 +18,6 @@ extensions = [
 ]
 
 autodoc_mock_imports = [
-    "pandas",
-    "plotly",
     "requests",
     "sqlalchemy",
     "streamlit",

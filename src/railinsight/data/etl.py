@@ -20,14 +20,14 @@ KEY = ["date", "service", "gare_depart", "gare_arrivee"]
 
 
 def fetch_data(api_url: str, since: date | None) -> list[dict] | None:
-    """Fetch raw SNCF records from the API since the provided date.
+    """Récupère les enregistrements bruts de la SNCF depuis l'API.
 
     Args:
-        api_url: The endpoint used to retrieve the regularity dataset.
-        since: Optional lower bound date. Only records newer than this date are returned.
+        api_url: Adresse du point d'accès permettant de récupérer les données de régularité.
+        since: Date minimale facultative. Seuls les enregistrements postérieurs à cette date sont récupérés.
 
     Returns:
-        A list of raw API records, or None if the request fails.
+        Liste des enregistrements bruts renvoyés par l'API, ou None en cas d'échec de la requête.
     """
     logger.info(f"Fetching data from API : {api_url}")
 
@@ -62,13 +62,13 @@ def fetch_data(api_url: str, since: date | None) -> list[dict] | None:
 
 
 def last_loaded_month(engine: Engine) -> date | None:
-    """Retrieves the date of the most recently recorded data from the database.
+    """Récupère la date la plus récente des données enregistrées dans la base.
 
     Args:
-        engine: SQLAlchemy engine connected to the target database.
+        engine: Moteur SQLAlchemy connecté à la base de données cible.
 
     Returns:
-        The latest date present in the table, or None if the table is empty.
+        Date du dernier enregistrement présent dans la table, ou None si celle-ci est vide.
     """
     query_last_month = f"SELECT MAX(date) FROM {TABLE}"
     with engine.connect() as conn:
@@ -76,11 +76,11 @@ def last_loaded_month(engine: Engine) -> date | None:
 
 
 def insert_data(data: pd.DataFrame, engine: Engine) -> None:
-    """Insert data into database.
+    """Insère les données nettoyées dans la base de données.
 
     Args:
-        data: DataFrame containing rows to persist.
-        engine: SQLAlchemy engine connected to the database.
+        data: DataFrame contenant les enregistrements à sauvegarder.
+        engine: Moteur SQLAlchemy permettant d'accéder à la base de données.
     """
 
     if data.empty:
@@ -100,10 +100,15 @@ def insert_data(data: pd.DataFrame, engine: Engine) -> None:
 
 
 def pipeline(engine: Engine | None):
-    """Run the ETL workflow: fetch new data, clean it directly, and write it to the DB.
+    """Exécute le processus ETL de récupération, de nettoyage et de stockage des données.
+
+    Récupère les nouvelles données depuis l'API SNCF à partir de la dernière date
+    enregistrée, les nettoie et vérifie leur conformité au schéma attendu avant
+    de les insérer dans la base de données.
 
     Args:
-        engine: Optional SQLAlchemy engine. A new engine is created if omitted.
+        engine: Moteur SQLAlchemy facultatif. Un nouveau moteur est créé si aucun
+            moteur n'est fourni.
     """
     if not engine:
         engine = make_engine()
@@ -130,7 +135,7 @@ def pipeline(engine: Engine | None):
 
 
 def main():
-    """Execute the ETL pipeline with the default database configuration."""
+    """Lance le processus ETL avec la configuration par défaut de la base de données."""
     logger.info("Démarrage pipeline ETL...")
     try:
         pipeline(None)

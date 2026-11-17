@@ -1,0 +1,200 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="fr" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>railinsight.viz.trip &mdash; Documentation RailInsight </title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=d1a510d7"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/translations.js?v=e6b791cb"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Recherche" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            RailInsight
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Rechercher docs" aria-label="Rechercher docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Documentation :</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../views.html">Pages Streamlit</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">RailInsight</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Code du module</a></li>
+      <li class="breadcrumb-item active">railinsight.viz.trip</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Code source de railinsight.viz.trip</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Visualisations descriptives de Mon trajet, sans calcul des indicateurs."""</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.express</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">px</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.graph_objects</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">go</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">railinsight.viz.history</span><span class="w"> </span><span class="kn">import</span> <span class="n">CAUSE_LABELS</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">railinsight.viz.theme</span><span class="w"> </span><span class="kn">import</span> <span class="n">CAUSE_COLORS</span><span class="p">,</span> <span class="n">OUTCOME_COLORS</span>
+
+<span class="n">TRIP_CAUSE_LABELS</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">CAUSE_LABELS</span><span class="p">,</span> <span class="s2">"cause_unallocated"</span><span class="p">:</span> <span class="s2">"Part non ventilée dans les données"</span><span class="p">}</span>
+<span class="n">RATE_LABELS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"late_rate"</span><span class="p">:</span> <span class="s2">"Retards / circulations effectuées"</span><span class="p">,</span>
+    <span class="s2">"cancellation_rate"</span><span class="p">:</span> <span class="s2">"Annulations / circulations prévues"</span><span class="p">,</span>
+    <span class="s2">"disruption_rate"</span><span class="p">:</span> <span class="s2">"Perturbations / circulations prévues"</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="outcomes_bar">
+<a class="viewcode-back" href="../../../modules.html#railinsight.viz.trip.outcomes_bar">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">outcomes_bar</span><span class="p">(</span><span class="n">outcomes</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Représente les trois issues historiques sur une base commune de 100.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        outcomes: Tableau outcome, per_100 et count fourni par l'analyse.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Barre empilée dont les valeurs non arrondies totalisent 100.</span>
+<span class="sd">    """</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">outcomes</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">selection</span><span class="o">=</span><span class="s2">"Historique de la sélection"</span><span class="p">)</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span>
+        <span class="n">x</span><span class="o">=</span><span class="s2">"per_100"</span><span class="p">,</span>
+        <span class="n">y</span><span class="o">=</span><span class="s2">"selection"</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="s2">"outcome"</span><span class="p">,</span>
+        <span class="n">orientation</span><span class="o">=</span><span class="s2">"h"</span><span class="p">,</span>
+        <span class="n">barmode</span><span class="o">=</span><span class="s2">"stack"</span><span class="p">,</span>
+        <span class="n">custom_data</span><span class="o">=</span><span class="p">[</span><span class="s2">"count"</span><span class="p">],</span>
+        <span class="n">color_discrete_map</span><span class="o">=</span><span class="n">OUTCOME_COLORS</span><span class="p">,</span>
+        <span class="n">labels</span><span class="o">=</span><span class="p">{</span><span class="s2">"per_100"</span><span class="p">:</span> <span class="s2">"Circulations pour 100 prévues"</span><span class="p">,</span> <span class="s2">"selection"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"outcome"</span><span class="p">:</span> <span class="s2">"Issue observée"</span><span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">margin</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">l</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">10</span><span class="p">),</span> <span class="n">legend</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">orientation</span><span class="o">=</span><span class="s2">"h"</span><span class="p">,</span> <span class="n">yanchor</span><span class="o">=</span><span class="s2">"bottom"</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_yaxes</span><span class="p">(</span><span class="n">visible</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_xaxes</span><span class="p">(</span><span class="nb">range</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">])</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_traces</span><span class="p">(</span><span class="n">hovertemplate</span><span class="o">=</span><span class="s2">"%</span><span class="si">{fullData.name}</span><span class="s2">&lt;br&gt;Pour 100 : %</span><span class="si">{x:.1f}</span><span class="s2">&lt;br&gt;Effectif observé : %</span><span class="si">{customdata[0]}</span><span class="s2">&lt;extra&gt;&lt;/extra&gt;"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+
+
+<div class="viewcode-block" id="comparison_bars">
+<a class="viewcode-back" href="../../../modules.html#railinsight.viz.trip.comparison_bars">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">comparison_bars</span><span class="p">(</span><span class="n">table</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">category</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Compare les trois taux entre deux périodes ou directions sans les additionner.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        table: Tableau de l'analyse avec les trois taux, scheduled et category.</span>
+<span class="sd">        category: Nom de la colonne period ou direction.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Barres groupées, pourcentages et effectifs en infobulle.</span>
+<span class="sd">    """</span>
+    <span class="n">long</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">melt</span><span class="p">(</span><span class="n">id_vars</span><span class="o">=</span><span class="p">[</span><span class="n">category</span><span class="p">,</span> <span class="s2">"scheduled"</span><span class="p">],</span> <span class="n">value_vars</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">RATE_LABELS</span><span class="p">),</span> <span class="n">var_name</span><span class="o">=</span><span class="s2">"rate"</span><span class="p">,</span> <span class="n">value_name</span><span class="o">=</span><span class="s2">"value"</span><span class="p">)</span>
+    <span class="n">long</span><span class="p">[</span><span class="s2">"rate"</span><span class="p">]</span> <span class="o">=</span> <span class="n">long</span><span class="p">[</span><span class="s2">"rate"</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">RATE_LABELS</span><span class="p">)</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span>
+        <span class="n">long</span><span class="p">,</span>
+        <span class="n">x</span><span class="o">=</span><span class="s2">"rate"</span><span class="p">,</span>
+        <span class="n">y</span><span class="o">=</span><span class="s2">"value"</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="n">category</span><span class="p">,</span>
+        <span class="n">barmode</span><span class="o">=</span><span class="s2">"group"</span><span class="p">,</span>
+        <span class="n">custom_data</span><span class="o">=</span><span class="p">[</span><span class="s2">"scheduled"</span><span class="p">],</span>
+        <span class="n">labels</span><span class="o">=</span><span class="p">{</span><span class="s2">"rate"</span><span class="p">:</span> <span class="s2">"Taux"</span><span class="p">,</span> <span class="s2">"value"</span><span class="p">:</span> <span class="s2">"Taux historique"</span><span class="p">,</span> <span class="n">category</span><span class="p">:</span> <span class="s2">"Période"</span> <span class="k">if</span> <span class="n">category</span> <span class="o">==</span> <span class="s2">"period"</span> <span class="k">else</span> <span class="s2">"Direction"</span><span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_yaxes</span><span class="p">(</span><span class="n">tickformat</span><span class="o">=</span><span class="s2">".0%"</span><span class="p">,</span> <span class="n">rangemode</span><span class="o">=</span><span class="s2">"tozero"</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_traces</span><span class="p">(</span><span class="n">hovertemplate</span><span class="o">=</span><span class="s2">"%</span><span class="si">{x}</span><span class="s2">&lt;br&gt;Taux : %</span><span class="si">{y:.1%}</span><span class="s2">&lt;br&gt;Circulations prévues : %</span><span class="si">{customdata[0]}</span><span class="s2">&lt;extra&gt;%</span><span class="si">{fullData.name}</span><span class="s2">&lt;/extra&gt;"</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_traces</span><span class="p">(</span><span class="n">texttemplate</span><span class="o">=</span><span class="s2">"%</span><span class="si">{y:.1%}</span><span class="s2">"</span><span class="p">,</span> <span class="n">textposition</span><span class="o">=</span><span class="s2">"inside"</span><span class="p">,</span> <span class="n">insidetextanchor</span><span class="o">=</span><span class="s2">"middle"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+
+
+<div class="viewcode-block" id="causes_bar">
+<a class="viewcode-back" href="../../../modules.html#railinsight.viz.trip.causes_bar">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">causes_bar</span><span class="p">(</span><span class="n">causes</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Présente les parts déclarées et non ventilées sans normaliser leur longueur.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        causes: Série de pourcentages issue de average_causes.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Barres horizontales sur un axe de 0 à 100 %, complément inconnu en gris.</span>
+<span class="sd">    """</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">causes</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">TRIP_CAUSE_LABELS</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"Part"</span><span class="p">)</span><span class="o">.</span><span class="n">rename_axis</span><span class="p">(</span><span class="s2">"Cause"</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">()</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="s2">"Part"</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">"Cause"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"Cause"</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="s2">"h"</span><span class="p">,</span> <span class="n">color_discrete_map</span><span class="o">=</span><span class="n">CAUSE_COLORS</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="p">{</span><span class="s2">"Part"</span><span class="p">:</span> <span class="s2">"Part des retards (%)"</span><span class="p">})</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_xaxes</span><span class="p">(</span><span class="n">autorange</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ticksuffix</span><span class="o">=</span><span class="s2">" %"</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">showlegend</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_traces</span><span class="p">(</span><span class="n">hovertemplate</span><span class="o">=</span><span class="s2">"%</span><span class="si">{y}</span><span class="s2">&lt;br&gt;Part : %</span><span class="si">{x:.1f}</span><span class="s2"> %&lt;extra&gt;&lt;/extra&gt;"</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_traces</span><span class="p">(</span><span class="n">texttemplate</span><span class="o">=</span><span class="s2">"%</span><span class="si">{x:.1f}</span><span class="s2"> %"</span><span class="p">,</span> <span class="n">textposition</span><span class="o">=</span><span class="s2">"inside"</span><span class="p">,</span> <span class="n">insidetextanchor</span><span class="o">=</span><span class="s2">"middle"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Droits d'auteur .</p>
+  </div>
+
+  Compilé avec <a href="https://www.sphinx-doc.org/">Sphinx</a> en utilisant un
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">thème</a>
+    fourni par <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

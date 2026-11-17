@@ -1,0 +1,214 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="fr" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>railinsight.viz.overview &mdash; Documentation RailInsight </title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=d1a510d7"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/translations.js?v=e6b791cb"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Recherche" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            RailInsight
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Rechercher docs" aria-label="Rechercher docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Documentation :</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../views.html">Pages Streamlit</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">RailInsight</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Code du module</a></li>
+      <li class="breadcrumb-item active">railinsight.viz.overview</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Code source de railinsight.viz.overview</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Graphiques de synthèse utilisés par la page Vue d'ensemble."""</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.express</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">px</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.graph_objects</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">go</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">railinsight.viz.theme</span><span class="w"> </span><span class="kn">import</span> <span class="n">CAUSE_COLORS</span><span class="p">,</span> <span class="n">SEQUENTIAL</span>
+
+<span class="n">MONTHS_SHORT</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"Jan"</span><span class="p">,</span> <span class="s2">"Fév"</span><span class="p">,</span> <span class="s2">"Mar"</span><span class="p">,</span> <span class="s2">"Avr"</span><span class="p">,</span> <span class="s2">"Mai"</span><span class="p">,</span> <span class="s2">"Juin"</span><span class="p">,</span> <span class="s2">"Juil"</span><span class="p">,</span> <span class="s2">"Août"</span><span class="p">,</span> <span class="s2">"Sep"</span><span class="p">,</span> <span class="s2">"Oct"</span><span class="p">,</span> <span class="s2">"Nov"</span><span class="p">,</span> <span class="s2">"Déc"</span><span class="p">]</span>
+
+
+<div class="viewcode-block" id="network_trend_line">
+<a class="viewcode-back" href="../../../modules.html#railinsight.viz.overview.network_trend_line">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">network_trend_line</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"Évolution des retards et des annulations"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Compare les taux mensuels de retard et d'annulation sur le réseau."""</span>
+    <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
+
+    <span class="n">long</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">melt</span><span class="p">(</span>
+        <span class="n">id_vars</span><span class="o">=</span><span class="s2">"date"</span><span class="p">,</span>
+        <span class="n">value_vars</span><span class="o">=</span><span class="p">[</span><span class="s2">"late_rate"</span><span class="p">,</span> <span class="s2">"cancellation_rate"</span><span class="p">],</span>
+        <span class="n">var_name</span><span class="o">=</span><span class="s2">"Indicateur"</span><span class="p">,</span>
+        <span class="n">value_name</span><span class="o">=</span><span class="s2">"Taux"</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">long</span><span class="p">[</span><span class="s2">"Indicateur"</span><span class="p">]</span> <span class="o">=</span> <span class="n">long</span><span class="p">[</span><span class="s2">"Indicateur"</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">({</span><span class="s2">"late_rate"</span><span class="p">:</span> <span class="s2">"Taux de retard"</span><span class="p">,</span> <span class="s2">"cancellation_rate"</span><span class="p">:</span> <span class="s2">"Taux d'annulation"</span><span class="p">})</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">line</span><span class="p">(</span>
+        <span class="n">long</span><span class="p">,</span>
+        <span class="n">x</span><span class="o">=</span><span class="s2">"date"</span><span class="p">,</span>
+        <span class="n">y</span><span class="o">=</span><span class="s2">"Taux"</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="s2">"Indicateur"</span><span class="p">,</span>
+        <span class="n">markers</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">labels</span><span class="o">=</span><span class="p">{</span><span class="s2">"date"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"Taux"</span><span class="p">:</span> <span class="s2">"Taux"</span><span class="p">,</span> <span class="s2">"Indicateur"</span><span class="p">:</span> <span class="s2">""</span><span class="p">},</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_yaxes</span><span class="p">(</span><span class="n">tickformat</span><span class="o">=</span><span class="s2">".0%"</span><span class="p">,</span> <span class="n">rangemode</span><span class="o">=</span><span class="s2">"tozero"</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
+        <span class="n">height</span><span class="o">=</span><span class="mi">370</span><span class="p">,</span>
+        <span class="n">margin</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">l</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mi">108</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">12</span><span class="p">),</span>
+        <span class="n">legend</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">orientation</span><span class="o">=</span><span class="s2">"h"</span><span class="p">,</span> <span class="n">yanchor</span><span class="o">=</span><span class="s2">"bottom"</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">,</span> <span class="n">xanchor</span><span class="o">=</span><span class="s2">"left"</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+        <span class="n">hovermode</span><span class="o">=</span><span class="s2">"x unified"</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+
+
+<div class="viewcode-block" id="causes_bar">
+<a class="viewcode-back" href="../../../modules.html#railinsight.viz.overview.causes_bar">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">causes_bar</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"Répartition des causes de retard"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Classe les six causes selon leur part pondérée dans les retards."""</span>
+    <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
+
+    <span class="n">ordered</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">"share"</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span>
+        <span class="n">ordered</span><span class="p">,</span>
+        <span class="n">x</span><span class="o">=</span><span class="s2">"share"</span><span class="p">,</span>
+        <span class="n">y</span><span class="o">=</span><span class="s2">"cause"</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="s2">"cause"</span><span class="p">,</span>
+        <span class="n">color_discrete_map</span><span class="o">=</span><span class="n">CAUSE_COLORS</span><span class="p">,</span>
+        <span class="n">orientation</span><span class="o">=</span><span class="s2">"h"</span><span class="p">,</span>
+        <span class="n">text</span><span class="o">=</span><span class="s2">"share"</span><span class="p">,</span>
+        <span class="n">labels</span><span class="o">=</span><span class="p">{</span><span class="s2">"share"</span><span class="p">:</span> <span class="s2">"Part pondérée (%)"</span><span class="p">,</span> <span class="s2">"cause"</span><span class="p">:</span> <span class="s2">""</span><span class="p">},</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_traces</span><span class="p">(</span><span class="n">texttemplate</span><span class="o">=</span><span class="s2">"%</span><span class="si">{x:.1f}</span><span class="s2"> %"</span><span class="p">,</span> <span class="n">textposition</span><span class="o">=</span><span class="s2">"outside"</span><span class="p">,</span> <span class="n">cliponaxis</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_xaxes</span><span class="p">(</span><span class="n">ticksuffix</span><span class="o">=</span><span class="s2">" %"</span><span class="p">,</span> <span class="n">rangemode</span><span class="o">=</span><span class="s2">"tozero"</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
+        <span class="n">height</span><span class="o">=</span><span class="mi">360</span><span class="p">,</span>
+        <span class="n">margin</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">l</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">38</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mi">58</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">12</span><span class="p">),</span>
+        <span class="n">showlegend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+
+
+<div class="viewcode-block" id="seasonality_heatmap">
+<a class="viewcode-back" href="../../../modules.html#railinsight.viz.overview.seasonality_heatmap">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">seasonality_heatmap</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"Taux de retard par année et par mois"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Affiche une heatmap année × mois à partir des taux mensuels du réseau."""</span>
+    <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
+
+    <span class="n">working</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">working</span><span class="p">[</span><span class="s2">"date"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">working</span><span class="p">[</span><span class="s2">"date"</span><span class="p">])</span>
+    <span class="n">working</span><span class="p">[</span><span class="s2">"year"</span><span class="p">]</span> <span class="o">=</span> <span class="n">working</span><span class="p">[</span><span class="s2">"date"</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">year</span>
+    <span class="n">working</span><span class="p">[</span><span class="s2">"month"</span><span class="p">]</span> <span class="o">=</span> <span class="n">working</span><span class="p">[</span><span class="s2">"date"</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">month</span>
+    <span class="n">matrix</span> <span class="o">=</span> <span class="n">working</span><span class="o">.</span><span class="n">pivot</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s2">"year"</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="s2">"month"</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="s2">"late_rate"</span><span class="p">)</span>
+    <span class="n">matrix</span> <span class="o">=</span> <span class="n">matrix</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">13</span><span class="p">))</span><span class="o">.</span><span class="n">sort_index</span><span class="p">()</span>
+
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">(</span>
+        <span class="n">data</span><span class="o">=</span><span class="n">go</span><span class="o">.</span><span class="n">Heatmap</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">MONTHS_SHORT</span><span class="p">,</span>
+            <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">year</span><span class="p">)</span> <span class="k">for</span> <span class="n">year</span> <span class="ow">in</span> <span class="n">matrix</span><span class="o">.</span><span class="n">index</span><span class="p">],</span>
+            <span class="n">z</span><span class="o">=</span><span class="n">matrix</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span><span class="p">,</span>
+            <span class="n">colorscale</span><span class="o">=</span><span class="n">SEQUENTIAL</span><span class="p">,</span>
+            <span class="n">xgap</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+            <span class="n">ygap</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+            <span class="n">colorbar</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">"Retard"</span><span class="p">,</span> <span class="n">ticksuffix</span><span class="o">=</span><span class="s2">" %"</span><span class="p">),</span>
+            <span class="n">hovertemplate</span><span class="o">=</span><span class="s2">"Année : %</span><span class="si">{y}</span><span class="s2">&lt;br&gt;Mois : %</span><span class="si">{x}</span><span class="s2">&lt;br&gt;Taux de retard : %</span><span class="si">{z:.1f}</span><span class="s2"> %&lt;extra&gt;&lt;/extra&gt;"</span><span class="p">,</span>
+            <span class="n">connectgaps</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+        <span class="n">height</span><span class="o">=</span><span class="mi">360</span><span class="p">,</span>
+        <span class="n">margin</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">l</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mi">58</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">12</span><span class="p">),</span>
+        <span class="n">xaxis_title</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span>
+        <span class="n">yaxis_title</span><span class="o">=</span><span class="s2">"Année"</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Droits d'auteur .</p>
+  </div>
+
+  Compilé avec <a href="https://www.sphinx-doc.org/">Sphinx</a> en utilisant un
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">thème</a>
+    fourni par <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

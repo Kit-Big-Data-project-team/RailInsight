@@ -1,0 +1,6 @@
+2026-11-16 19:49:17,198 ERROR railinsight.database.init_db: Database initialization failed: (psycopg2.OperationalError) could not translate host name "db" to address: Name or service not known
+
+(Background on this error at: https://sqlalche.me/e/21/e3q8)
+2026-11-16 19:49:18,460 ERROR __main__: Une erreur est survenue lors du traitement : (psycopg2.OperationalError) could not translate host name "db" to address: Name or service not known
+
+(Background on this error at: https://sqlalche.me/e/21/e3q8)

@@ -1,0 +1,177 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="fr" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>railinsight.viz.reliability &mdash; Documentation RailInsight </title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=d1a510d7"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/translations.js?v=e6b791cb"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Recherche" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            RailInsight
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Rechercher docs" aria-label="Rechercher docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Documentation :</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../views.html">Pages Streamlit</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">RailInsight</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Code du module</a></li>
+      <li class="breadcrumb-item active">railinsight.viz.reliability</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Code source de railinsight.viz.reliability</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Graphiques de la page Fiabilité des liaisons."""</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.express</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">px</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.graph_objects</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">go</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">railinsight.viz.theme</span><span class="w"> </span><span class="kn">import</span> <span class="n">PRIMARY</span><span class="p">,</span> <span class="n">PRIMARY_DARK</span>
+
+
+<div class="viewcode-block" id="reliability_bar">
+<a class="viewcode-back" href="../../../modules.html#railinsight.viz.reliability.reliability_bar">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">reliability_bar</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">PRIMARY</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Affiche le score de fiabilité des liaisons avec un dégradé de bleu.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Tableau avec les colonnes route et reliability_score.</span>
+<span class="sd">        title: Titre du graphique.</span>
+<span class="sd">        color: Couleur de référence (conservée pour compatibilité).</span>
+<span class="sd">    """</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">"reliability_score"</span><span class="p">)</span>
+
+    <span class="c1"># Dégradé monochrome bleu, du plus clair au plus soutenu.</span>
+    <span class="n">blue_gradient</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="s2">"#DCE6F0"</span><span class="p">,</span>
+        <span class="s2">"#C5D5E5"</span><span class="p">,</span>
+        <span class="s2">"#AEC4D9"</span><span class="p">,</span>
+        <span class="s2">"#97B3CE"</span><span class="p">,</span>
+        <span class="s2">"#80A2C3"</span><span class="p">,</span>
+        <span class="s2">"#6991B8"</span><span class="p">,</span>
+        <span class="s2">"#5280AD"</span><span class="p">,</span>
+        <span class="s2">"#3F709F"</span><span class="p">,</span>
+        <span class="s2">"#32618D"</span><span class="p">,</span>
+        <span class="s2">"#274F78"</span><span class="p">,</span>
+    <span class="p">]</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span>
+        <span class="n">x</span><span class="o">=</span><span class="s2">"reliability_score"</span><span class="p">,</span>
+        <span class="n">y</span><span class="o">=</span><span class="s2">"route"</span><span class="p">,</span>
+        <span class="n">orientation</span><span class="o">=</span><span class="s2">"h"</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+        <span class="n">labels</span><span class="o">=</span><span class="p">{</span><span class="s2">"reliability_score"</span><span class="p">:</span> <span class="s2">"Score de fiabilité"</span><span class="p">,</span> <span class="s2">"route"</span><span class="p">:</span> <span class="s2">""</span><span class="p">},</span>
+        <span class="n">range_x</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">xaxis_tickformat</span><span class="o">=</span><span class="s2">".0%"</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_traces</span><span class="p">(</span>
+        <span class="n">marker_color</span><span class="o">=</span><span class="n">blue_gradient</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">)],</span>
+        <span class="n">texttemplate</span><span class="o">=</span><span class="s2">"%</span><span class="si">{x:.1%}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="n">textposition</span><span class="o">=</span><span class="s2">"inside"</span><span class="p">,</span>
+        <span class="n">insidetextanchor</span><span class="o">=</span><span class="s2">"middle"</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+
+
+<div class="viewcode-block" id="reliability_scatter">
+<a class="viewcode-back" href="../../../modules.html#railinsight.viz.reliability.reliability_scatter">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">reliability_scatter</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"Retards vs annulations par liaison"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Nuage de points : taux d'annulation contre taux de retard, taille = trafic.</span>
+
+<span class="sd">    Les liaisons en bas à gauche sont les plus fiables (peu de retards, peu d'annulations).</span>
+<span class="sd">    """</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+        <span class="n">df</span><span class="p">,</span>
+        <span class="n">x</span><span class="o">=</span><span class="s2">"late_rate"</span><span class="p">,</span>
+        <span class="n">y</span><span class="o">=</span><span class="s2">"cancellation_rate"</span><span class="p">,</span>
+        <span class="n">size</span><span class="o">=</span><span class="s2">"scheduled"</span><span class="p">,</span>
+        <span class="n">hover_name</span><span class="o">=</span><span class="s2">"route"</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+        <span class="n">labels</span><span class="o">=</span><span class="p">{</span><span class="s2">"late_rate"</span><span class="p">:</span> <span class="s2">"Taux de retard"</span><span class="p">,</span> <span class="s2">"cancellation_rate"</span><span class="p">:</span> <span class="s2">"Taux d'annulation"</span><span class="p">,</span> <span class="s2">"scheduled"</span><span class="p">:</span> <span class="s2">"Trains prévus"</span><span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">xaxis_tickformat</span><span class="o">=</span><span class="s2">".0%"</span><span class="p">,</span> <span class="n">yaxis_tickformat</span><span class="o">=</span><span class="s2">".0%"</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_traces</span><span class="p">(</span><span class="n">marker</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="n">PRIMARY_DARK</span><span class="p">,</span> <span class="n">opacity</span><span class="o">=</span><span class="mf">0.65</span><span class="p">,</span> <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">width</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"white"</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Droits d'auteur .</p>
+  </div>
+
+  Compilé avec <a href="https://www.sphinx-doc.org/">Sphinx</a> en utilisant un
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">thème</a>
+    fourni par <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

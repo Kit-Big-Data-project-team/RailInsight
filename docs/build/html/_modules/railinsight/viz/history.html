@@ -1,0 +1,281 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="fr" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>railinsight.viz.history &mdash; Documentation RailInsight </title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=d1a510d7"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/translations.js?v=e6b791cb"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Recherche" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            RailInsight
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Rechercher docs" aria-label="Rechercher docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Documentation :</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../views.html">Pages Streamlit</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">RailInsight</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Code du module</a></li>
+      <li class="breadcrumb-item active">railinsight.viz.history</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Code source de railinsight.viz.history</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Graphiques de la page Historique &amp; évolution."""</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.express</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">px</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">plotly.graph_objects</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">go</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">railinsight.viz.theme</span><span class="w"> </span><span class="kn">import</span> <span class="n">CAUSE_COLORS</span>
+
+<span class="c1"># Libellés lisibles des causes pour les légendes.</span>
+<span class="n">CAUSE_LABELS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"cause_external"</span><span class="p">:</span> <span class="s2">"Externe"</span><span class="p">,</span>
+    <span class="s2">"cause_infra"</span><span class="p">:</span> <span class="s2">"Infrastructure"</span><span class="p">,</span>
+    <span class="s2">"cause_traffic"</span><span class="p">:</span> <span class="s2">"Gestion du trafic"</span><span class="p">,</span>
+    <span class="s2">"cause_rolling_stock"</span><span class="p">:</span> <span class="s2">"Matériel roulant"</span><span class="p">,</span>
+    <span class="s2">"cause_station"</span><span class="p">:</span> <span class="s2">"Gestion en gare"</span><span class="p">,</span>
+    <span class="s2">"cause_passengers"</span><span class="p">:</span> <span class="s2">"Prise en charge voyageurs"</span><span class="p">,</span>
+    <span class="s2">"cause_unallocated"</span><span class="p">:</span> <span class="s2">"Part non ventilée dans les données"</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="n">SEVERITY_LABELS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"late_15"</span><span class="p">:</span> <span class="s2">"&gt; 15 min"</span><span class="p">,</span>
+    <span class="s2">"late_30"</span><span class="p">:</span> <span class="s2">"&gt; 30 min"</span><span class="p">,</span>
+    <span class="s2">"late_60"</span><span class="p">:</span> <span class="s2">"&gt; 60 min"</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">MONTH_LABELS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="mi">1</span><span class="p">:</span> <span class="s2">"Jan"</span><span class="p">,</span>
+    <span class="mi">2</span><span class="p">:</span> <span class="s2">"Fév"</span><span class="p">,</span>
+    <span class="mi">3</span><span class="p">:</span> <span class="s2">"Mar"</span><span class="p">,</span>
+    <span class="mi">4</span><span class="p">:</span> <span class="s2">"Avr"</span><span class="p">,</span>
+    <span class="mi">5</span><span class="p">:</span> <span class="s2">"Mai"</span><span class="p">,</span>
+    <span class="mi">6</span><span class="p">:</span> <span class="s2">"Juin"</span><span class="p">,</span>
+    <span class="mi">7</span><span class="p">:</span> <span class="s2">"Juil"</span><span class="p">,</span>
+    <span class="mi">8</span><span class="p">:</span> <span class="s2">"Août"</span><span class="p">,</span>
+    <span class="mi">9</span><span class="p">:</span> <span class="s2">"Sep"</span><span class="p">,</span>
+    <span class="mi">10</span><span class="p">:</span> <span class="s2">"Oct"</span><span class="p">,</span>
+    <span class="mi">11</span><span class="p">:</span> <span class="s2">"Nov"</span><span class="p">,</span>
+    <span class="mi">12</span><span class="p">:</span> <span class="s2">"Déc"</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<div class="viewcode-block" id="delays_cancellations_line">
+<a class="viewcode-back" href="../../../modules.html#railinsight.viz.history.delays_cancellations_line">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">delays_cancellations_line</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"Retards, annulations et perturbations"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Affiche les trois taux sans les empiler ni additionner leurs pourcentages.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Tableau mensuel avec date, late_rate, cancellation_rate et disruption_rate.</span>
+<span class="sd">        title: Titre du graphique.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Figure avec trois courbes, axe et infobulles exprimés en pourcentages.</span>
+<span class="sd">        Les légendes précisent la population de chaque indicateur.</span>
+<span class="sd">    """</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"late_rate"</span><span class="p">:</span> <span class="s2">"Retards / trains ayant circulé"</span><span class="p">,</span>
+        <span class="s2">"cancellation_rate"</span><span class="p">:</span> <span class="s2">"Annulations / trains prévus"</span><span class="p">,</span>
+        <span class="s2">"disruption_rate"</span><span class="p">:</span> <span class="s2">"Perturbations / trains prévus"</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">long</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">melt</span><span class="p">(</span><span class="n">id_vars</span><span class="o">=</span><span class="s2">"date"</span><span class="p">,</span> <span class="n">value_vars</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">labels</span><span class="p">),</span> <span class="n">var_name</span><span class="o">=</span><span class="s2">"Indicateur"</span><span class="p">,</span> <span class="n">value_name</span><span class="o">=</span><span class="s2">"Taux"</span><span class="p">)</span>
+    <span class="n">long</span><span class="p">[</span><span class="s2">"Indicateur"</span><span class="p">]</span> <span class="o">=</span> <span class="n">long</span><span class="p">[</span><span class="s2">"Indicateur"</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">long</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="s2">"date"</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">"Taux"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"Indicateur"</span><span class="p">,</span> <span class="n">line_dash</span><span class="o">=</span><span class="s2">"Indicateur"</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="p">{</span><span class="s2">"date"</span><span class="p">:</span> <span class="s2">""</span><span class="p">})</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_yaxes</span><span class="p">(</span><span class="n">tickformat</span><span class="o">=</span><span class="s2">".0%"</span><span class="p">,</span> <span class="n">rangemode</span><span class="o">=</span><span class="s2">"tozero"</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_traces</span><span class="p">(</span><span class="n">hovertemplate</span><span class="o">=</span><span class="s2">"%{x|%m/%Y}&lt;br&gt;Taux : %</span><span class="si">{y:.1%}</span><span class="s2">&lt;extra&gt;%</span><span class="si">{fullData.name}</span><span class="s2">&lt;/extra&gt;"</span><span class="p">,</span> <span class="n">connectgaps</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+
+
+<div class="viewcode-block" id="cause_area">
+<a class="viewcode-back" href="../../../modules.html#railinsight.viz.history.cause_area">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">cause_area</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"Répartition des causes de retard dans le temps"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Présente les causes déclarées et le complément non ventilé en gris.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Répartition mensuelle, en pourcentages de 0 à 100. Les mois sans</span>
+<span class="sd">            retard ont des parts manquantes et sont signalés par une annotation.</span>
+<span class="sd">        title: Titre du graphique.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Aire empilée sans normalisation des parts publiées ; les infobulles</span>
+<span class="sd">        précisent les pourcentages. Une annotation signale chaque mois sans retard.</span>
+<span class="sd">    """</span>
+    <span class="n">long</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">melt</span><span class="p">(</span><span class="n">id_vars</span><span class="o">=</span><span class="s2">"date"</span><span class="p">,</span> <span class="n">value_vars</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">CAUSE_LABELS</span><span class="p">),</span> <span class="n">var_name</span><span class="o">=</span><span class="s2">"Cause"</span><span class="p">,</span> <span class="n">value_name</span><span class="o">=</span><span class="s2">"Part (%)"</span><span class="p">)</span>
+    <span class="n">long</span><span class="p">[</span><span class="s2">"Cause"</span><span class="p">]</span> <span class="o">=</span> <span class="n">long</span><span class="p">[</span><span class="s2">"Cause"</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">CAUSE_LABELS</span><span class="p">)</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">area</span><span class="p">(</span>
+        <span class="n">long</span><span class="p">,</span>
+        <span class="n">x</span><span class="o">=</span><span class="s2">"date"</span><span class="p">,</span>
+        <span class="n">y</span><span class="o">=</span><span class="s2">"Part (%)"</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="s2">"Cause"</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+        <span class="n">labels</span><span class="o">=</span><span class="p">{</span><span class="s2">"date"</span><span class="p">:</span> <span class="s2">""</span><span class="p">},</span>
+        <span class="n">color_discrete_map</span><span class="o">=</span><span class="n">CAUSE_COLORS</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_yaxes</span><span class="p">(</span><span class="n">ticksuffix</span><span class="o">=</span><span class="s2">" %"</span><span class="p">,</span> <span class="n">rangemode</span><span class="o">=</span><span class="s2">"tozero"</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_traces</span><span class="p">(</span><span class="n">hovertemplate</span><span class="o">=</span><span class="s2">"%{x|%m/%Y}&lt;br&gt;Part : %</span><span class="si">{y:.1f}</span><span class="s2"> %&lt;extra&gt;%</span><span class="si">{fullData.name}</span><span class="s2">&lt;/extra&gt;"</span><span class="p">,</span> <span class="n">connectgaps</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">date</span> <span class="ow">in</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">df</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">CAUSE_LABELS</span><span class="p">)]</span><span class="o">.</span><span class="n">isna</span><span class="p">()</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="s2">"date"</span><span class="p">]:</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">add_annotation</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">date</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">"Aucun retard enregistré"</span><span class="p">,</span> <span class="n">showarrow</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+
+
+<div class="viewcode-block" id="seasonality_bar">
+<a class="viewcode-back" href="../../../modules.html#railinsight.viz.history.seasonality_bar">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">seasonality_bar</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"Comparaison par mois de l'année"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Réutilise les mois français d'Abdelmounaim pour comparer les trois taux.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Tableau de seasonality avec les trois taux et n_years.</span>
+<span class="sd">        title: Titre du graphique, sans interprétation causale.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Barres groupées non additives, pourcentages et nombre d'années en infobulle.</span>
+<span class="sd">    """</span>
+    <span class="n">labels</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"late_rate"</span><span class="p">:</span> <span class="s2">"Retards / trains ayant circulé"</span><span class="p">,</span>
+        <span class="s2">"cancellation_rate"</span><span class="p">:</span> <span class="s2">"Annulations / trains prévus"</span><span class="p">,</span>
+        <span class="s2">"disruption_rate"</span><span class="p">:</span> <span class="s2">"Perturbations / trains prévus"</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">data</span><span class="p">[</span><span class="s2">"Mois"</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">"month"</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">MONTH_LABELS</span><span class="p">)</span>
+    <span class="n">long</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">melt</span><span class="p">(</span><span class="n">id_vars</span><span class="o">=</span><span class="p">[</span><span class="s2">"Mois"</span><span class="p">,</span> <span class="s2">"n_years"</span><span class="p">],</span> <span class="n">value_vars</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">labels</span><span class="p">),</span> <span class="n">var_name</span><span class="o">=</span><span class="s2">"Indicateur"</span><span class="p">,</span> <span class="n">value_name</span><span class="o">=</span><span class="s2">"Taux"</span><span class="p">)</span>
+    <span class="n">long</span><span class="p">[</span><span class="s2">"Indicateur"</span><span class="p">]</span> <span class="o">=</span> <span class="n">long</span><span class="p">[</span><span class="s2">"Indicateur"</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">labels</span><span class="p">)</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span>
+        <span class="n">long</span><span class="p">,</span>
+        <span class="n">x</span><span class="o">=</span><span class="s2">"Mois"</span><span class="p">,</span>
+        <span class="n">y</span><span class="o">=</span><span class="s2">"Taux"</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="s2">"Indicateur"</span><span class="p">,</span>
+        <span class="n">barmode</span><span class="o">=</span><span class="s2">"group"</span><span class="p">,</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+        <span class="n">custom_data</span><span class="o">=</span><span class="p">[</span><span class="s2">"n_years"</span><span class="p">],</span>
+        <span class="n">category_orders</span><span class="o">=</span><span class="p">{</span><span class="s2">"Mois"</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">MONTH_LABELS</span><span class="o">.</span><span class="n">values</span><span class="p">())},</span>
+    <span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_yaxes</span><span class="p">(</span><span class="n">tickformat</span><span class="o">=</span><span class="s2">".0%"</span><span class="p">,</span> <span class="n">rangemode</span><span class="o">=</span><span class="s2">"tozero"</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_traces</span><span class="p">(</span><span class="n">hovertemplate</span><span class="o">=</span><span class="s2">"%</span><span class="si">{x}</span><span class="s2">&lt;br&gt;Taux : %</span><span class="si">{y:.1%}</span><span class="s2">&lt;br&gt;Années contributrices : %</span><span class="si">{customdata[0]}</span><span class="s2">&lt;extra&gt;%</span><span class="si">{fullData.name}</span><span class="s2">&lt;/extra&gt;"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+
+
+<div class="viewcode-block" id="service_line">
+<a class="viewcode-back" href="../../../modules.html#railinsight.viz.history.service_line">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">service_line</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"Taux de retard : National vs International"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Affiche la comparaison des services proposée par Abdelmounaim.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Taux de retard par date et service.</span>
+<span class="sd">        title: Titre du graphique.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Courbes en pourcentages, sans interpolation des valeurs manquantes.</span>
+<span class="sd">    """</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="s2">"date"</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">"late_rate"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"service"</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="p">{</span><span class="s2">"date"</span><span class="p">:</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"late_rate"</span><span class="p">:</span> <span class="s2">"Taux de retard"</span><span class="p">,</span> <span class="s2">"service"</span><span class="p">:</span> <span class="s2">"Service"</span><span class="p">})</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">yaxis_tickformat</span><span class="o">=</span><span class="s2">".0%"</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_traces</span><span class="p">(</span><span class="n">connectgaps</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">hovertemplate</span><span class="o">=</span><span class="s2">"%{x|%m/%Y}&lt;br&gt;Taux : %</span><span class="si">{y:.1%}</span><span class="s2">&lt;extra&gt;%</span><span class="si">{fullData.name}</span><span class="s2">&lt;/extra&gt;"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+
+
+<div class="viewcode-block" id="severity_area">
+<a class="viewcode-back" href="../../../modules.html#railinsight.viz.history.severity_area">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">severity_area</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"Sévérité des retards dans le temps"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Conserve les courbes de sévérité d'Abdelmounaim sans empiler les seuils.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        df: Parts mensuelles des seuils, rapportées aux trains prévus.</span>
+<span class="sd">        title: Titre du graphique.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Trois courbes en pourcentages ; une valeur indisponible laisse une coupure.</span>
+<span class="sd">        Le nom historique de la fonction est conservé pour faciliter l'intégration.</span>
+<span class="sd">    """</span>
+    <span class="n">long</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">melt</span><span class="p">(</span><span class="n">id_vars</span><span class="o">=</span><span class="s2">"date"</span><span class="p">,</span> <span class="n">value_vars</span><span class="o">=</span><span class="p">[</span><span class="s2">"late_15"</span><span class="p">,</span> <span class="s2">"late_30"</span><span class="p">,</span> <span class="s2">"late_60"</span><span class="p">],</span> <span class="n">var_name</span><span class="o">=</span><span class="s2">"Seuil"</span><span class="p">,</span> <span class="n">value_name</span><span class="o">=</span><span class="s2">"Part"</span><span class="p">)</span>
+    <span class="n">long</span><span class="p">[</span><span class="s2">"Seuil"</span><span class="p">]</span> <span class="o">=</span> <span class="n">long</span><span class="p">[</span><span class="s2">"Seuil"</span><span class="p">]</span><span class="o">.</span><span class="n">map</span><span class="p">(</span><span class="n">SEVERITY_LABELS</span><span class="p">)</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">px</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="n">long</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="s2">"date"</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="s2">"Part"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"Seuil"</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="p">{</span><span class="s2">"date"</span><span class="p">:</span> <span class="s2">""</span><span class="p">})</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span><span class="n">yaxis_tickformat</span><span class="o">=</span><span class="s2">".0%"</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_traces</span><span class="p">(</span><span class="n">connectgaps</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">hovertemplate</span><span class="o">=</span><span class="s2">"%{x|%m/%Y}&lt;br&gt;Taux : %</span><span class="si">{y:.1%}</span><span class="s2">&lt;extra&gt;%</span><span class="si">{fullData.name}</span><span class="s2">&lt;/extra&gt;"</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">fig</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Droits d'auteur .</p>
+  </div>
+
+  Compilé avec <a href="https://www.sphinx-doc.org/">Sphinx</a> en utilisant un
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">thème</a>
+    fourni par <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

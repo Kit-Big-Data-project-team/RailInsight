@@ -4,7 +4,14 @@ import pandas as pd
 import pytest
 
 from railinsight.analysis.history import CAUSE_COLUMNS
-from railinsight.analysis.trip import average_causes, filter_trip_period, outcomes_per_100, recent_trip_evolution, reverse_trip_comparison, trip_summary
+from railinsight.analysis.trip import (
+    average_causes,
+    filter_trip_period,
+    outcomes_per_100,
+    recent_trip_evolution,
+    reverse_trip_comparison,
+    trip_summary,
+)
 from railinsight.exceptions import DataValidationError, PeriodOutOfRangeError
 
 
@@ -28,7 +35,12 @@ def _row(date="2025-01-01", origin="A", destination="B", **changes):
 
 def _history():
     """Deux périodes complètes de douze mois avec une hausse connue des perturbations."""
-    return pd.DataFrame([_row(date, cancelled=0 if i < 12 else 10, late_arrival=10 if i < 12 else 20) for i, date in enumerate(pd.date_range("2024-10-01", "2026-09-01", freq="MS"))])
+    return pd.DataFrame(
+        [
+            _row(date, cancelled=0 if i < 12 else 10, late_arrival=10 if i < 12 else 20)
+            for i, date in enumerate(pd.date_range("2024-10-01", "2026-09-01", freq="MS"))
+        ]
+    )
 
 
 def test_summary_and_outcomes_have_explicit_denominators():
@@ -54,7 +66,9 @@ def test_multiple_services_count_distinct_months_and_pool_counts():
     assert result["avg_delay_arrival"] == pytest.approx((18 * 12 + 2 * 4) / 20)
 
 
-@pytest.mark.parametrize("change", [{"scheduled": None}, {"scheduled": float("inf")}, {"cancelled": -1}, {"late_arrival": "inconnu"}, {"late_arrival": 0.5}, {"cancelled": 90}])
+@pytest.mark.parametrize(
+    "change", [{"scheduled": None}, {"scheduled": float("inf")}, {"cancelled": -1}, {"late_arrival": "inconnu"}, {"late_arrival": 0.5}, {"cancelled": 90}]
+)
 def test_invalid_core_counts_are_not_corrected(change):
     """Une donnée absente ou incohérente ne devient pas une circulation valide."""
     data = pd.DataFrame([_row(**change)])
@@ -230,7 +244,8 @@ def test_cause_shares_keep_the_unallocated_part():
 
 
 @pytest.mark.parametrize(
-    "column,value", [("late_arrival", -1), ("late_arrival", None), ("late_arrival", float("inf")), ("cause_external", -1), ("cause_external", 101), ("cause_external", 1)]
+    "column,value",
+    [("late_arrival", -1), ("late_arrival", None), ("late_arrival", float("inf")), ("cause_external", -1), ("cause_external", 101), ("cause_external", 1)],
 )
 def test_invalid_causes_and_weights_are_explicit(column, value):
     """Les valeurs incohérentes sont signalées plutôt que normalisées."""

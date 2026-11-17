@@ -1,4 +1,4 @@
-"""Métriques de la page Fiabilité des liaisons (tâche 5).
+"""Métriques de la page Fiabilité des liaisons.
 
 On résume chaque liaison sur toute la période : part de trains réellement arrivés
 à l'heure (hors annulations et retards), afin de classer les liaisons de la plus

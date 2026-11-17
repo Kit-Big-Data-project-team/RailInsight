@@ -186,7 +186,9 @@ def recent_trip_evolution(df: pd.DataFrame) -> dict[str, object]:
         summary = trip_summary(df.loc[dates.between(first, last)])
         if not summary["scheduled"]:
             return {**unavailable, "reason": "Une des périodes ne contient aucune circulation prévue."}
-        rows.append({"period": label, "start": first, "end": last, **{key: summary[key] for key in ("scheduled", "late_rate", "cancellation_rate", "disruption_rate")}})
+        rows.append(
+            {"period": label, "start": first, "end": last, **{key: summary[key] for key in ("scheduled", "late_rate", "cancellation_rate", "disruption_rate")}}
+        )
     table = pd.DataFrame(rows)
     deltas = {}
     for key in ("late_rate", "cancellation_rate", "disruption_rate"):

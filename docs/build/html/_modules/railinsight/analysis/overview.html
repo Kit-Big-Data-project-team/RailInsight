@@ -1,0 +1,360 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="fr" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>railinsight.analysis.overview &mdash; Documentation RailInsight </title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+
+  
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=d1a510d7"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+      <script src="../../../_static/translations.js?v=e6b791cb"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Recherche" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            RailInsight
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Rechercher docs" aria-label="Rechercher docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Documentation :</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../modules.html">Modules</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../views.html">Pages Streamlit</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">RailInsight</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Code du module</a></li>
+      <li class="breadcrumb-item active">railinsight.analysis.overview</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Code source de railinsight.analysis.overview</h1><div class="highlight"><pre>
+<span></span><span class="sd">"""Métriques synthétiques utilisées par la page Vue d'ensemble."""</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">railinsight.analysis.history</span><span class="w"> </span><span class="kn">import</span> <span class="n">monthly_delays_cancellations</span>
+
+<span class="n">CAUSE_COLUMNS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"cause_external"</span><span class="p">:</span> <span class="s2">"Causes externes"</span><span class="p">,</span>
+    <span class="s2">"cause_infra"</span><span class="p">:</span> <span class="s2">"Infrastructure"</span><span class="p">,</span>
+    <span class="s2">"cause_traffic"</span><span class="p">:</span> <span class="s2">"Gestion du trafic"</span><span class="p">,</span>
+    <span class="s2">"cause_rolling_stock"</span><span class="p">:</span> <span class="s2">"Matériel roulant"</span><span class="p">,</span>
+    <span class="s2">"cause_station"</span><span class="p">:</span> <span class="s2">"Gestion en gare"</span><span class="p">,</span>
+    <span class="s2">"cause_passengers"</span><span class="p">:</span> <span class="s2">"Prise en charge des voyageurs"</span><span class="p">,</span>
+<span class="p">}</span>
+
+<span class="n">MONTHS_FR</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="s2">"janv."</span><span class="p">,</span>
+    <span class="s2">"févr."</span><span class="p">,</span>
+    <span class="s2">"mars"</span><span class="p">,</span>
+    <span class="s2">"avr."</span><span class="p">,</span>
+    <span class="s2">"mai"</span><span class="p">,</span>
+    <span class="s2">"juin"</span><span class="p">,</span>
+    <span class="s2">"juil."</span><span class="p">,</span>
+    <span class="s2">"août"</span><span class="p">,</span>
+    <span class="s2">"sept."</span><span class="p">,</span>
+    <span class="s2">"oct."</span><span class="p">,</span>
+    <span class="s2">"nov."</span><span class="p">,</span>
+    <span class="s2">"déc."</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<div class="viewcode-block" id="global_kpis">
+<a class="viewcode-back" href="../../../modules.html#railinsight.analysis.overview.global_kpis">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">global_kpis</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Indicateurs cumulés sur l'ensemble du réseau et de la période couverte."""</span>
+    <span class="n">scheduled</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">"scheduled"</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+    <span class="n">cancelled</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">"cancelled"</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+    <span class="n">late</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">"late_arrival"</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+    <span class="n">effective</span> <span class="o">=</span> <span class="n">scheduled</span> <span class="o">-</span> <span class="n">cancelled</span>
+    <span class="n">dates</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">"date"</span><span class="p">])</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"n_routes"</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">"route"</span><span class="p">]</span><span class="o">.</span><span class="n">nunique</span><span class="p">()),</span>
+        <span class="s2">"date_min"</span><span class="p">:</span> <span class="n">dates</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span>
+        <span class="s2">"date_max"</span><span class="p">:</span> <span class="n">dates</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span>
+        <span class="s2">"scheduled"</span><span class="p">:</span> <span class="n">scheduled</span><span class="p">,</span>
+        <span class="s2">"late_rate"</span><span class="p">:</span> <span class="p">(</span><span class="n">late</span> <span class="o">/</span> <span class="n">effective</span><span class="p">)</span> <span class="k">if</span> <span class="n">effective</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"cancellation_rate"</span><span class="p">:</span> <span class="p">(</span><span class="n">cancelled</span> <span class="o">/</span> <span class="n">scheduled</span><span class="p">)</span> <span class="k">if</span> <span class="n">scheduled</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="monthly_network_rates">
+<a class="viewcode-back" href="../../../modules.html#railinsight.analysis.overview.monthly_network_rates">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">monthly_network_rates</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Retourne les taux mensuels du réseau et les volumes correspondants.</span>
+
+<span class="sd">    Les taux sont calculés par les fonctions communes du module ``metrics`` via</span>
+<span class="sd">    ``monthly_delays_cancellations`` : il s'agit de rapports de sommes, et non</span>
+<span class="sd">    de moyennes de taux calculés liaison par liaison.</span>
+<span class="sd">    """</span>
+    <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"date"</span><span class="p">,</span> <span class="s2">"late_rate"</span><span class="p">,</span> <span class="s2">"cancellation_rate"</span><span class="p">,</span> <span class="s2">"scheduled"</span><span class="p">,</span> <span class="s2">"cancelled"</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span>
+
+    <span class="n">working</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">working</span><span class="p">[</span><span class="s2">"date"</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">working</span><span class="p">[</span><span class="s2">"date"</span><span class="p">])</span>
+    <span class="n">rates</span> <span class="o">=</span> <span class="n">monthly_delays_cancellations</span><span class="p">(</span><span class="n">working</span><span class="p">)</span>
+    <span class="n">volumes</span> <span class="o">=</span> <span class="n">working</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">"date"</span><span class="p">,</span> <span class="n">as_index</span><span class="o">=</span><span class="kc">False</span><span class="p">)[[</span><span class="s2">"scheduled"</span><span class="p">,</span> <span class="s2">"cancelled"</span><span class="p">]]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">rates</span><span class="o">.</span><span class="n">merge</span><span class="p">(</span><span class="n">volumes</span><span class="p">,</span> <span class="n">on</span><span class="o">=</span><span class="s2">"date"</span><span class="p">,</span> <span class="n">how</span><span class="o">=</span><span class="s2">"left"</span><span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">"date"</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_as_float_or_none</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Convertit une valeur numérique manquante en None."""</span>
+    <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="latest_month_kpis">
+<a class="viewcode-back" href="../../../modules.html#railinsight.analysis.overview.latest_month_kpis">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">latest_month_kpis</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Renvoie les taux du dernier mois et leur variation vs le mois précédent."""</span>
+    <span class="n">empty_result</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"date"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"late_rate"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"late_delta"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"cancellation_rate"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"cancellation_delta"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="n">monthly</span> <span class="o">=</span> <span class="n">monthly_network_rates</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">monthly</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">empty_result</span>
+
+    <span class="n">latest</span> <span class="o">=</span> <span class="n">monthly</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">latest_period</span> <span class="o">=</span> <span class="n">latest</span><span class="p">[</span><span class="s2">"date"</span><span class="p">]</span><span class="o">.</span><span class="n">to_period</span><span class="p">(</span><span class="s2">"M"</span><span class="p">)</span>
+    <span class="n">previous_period</span> <span class="o">=</span> <span class="n">latest_period</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">previous_rows</span> <span class="o">=</span> <span class="n">monthly</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">monthly</span><span class="p">[</span><span class="s2">"date"</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">to_period</span><span class="p">(</span><span class="s2">"M"</span><span class="p">)</span> <span class="o">==</span> <span class="n">previous_period</span><span class="p">]</span>
+    <span class="n">previous</span> <span class="o">=</span> <span class="n">previous_rows</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">previous_rows</span><span class="o">.</span><span class="n">empty</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="n">late_rate</span> <span class="o">=</span> <span class="n">_as_float_or_none</span><span class="p">(</span><span class="n">latest</span><span class="p">[</span><span class="s2">"late_rate"</span><span class="p">])</span>
+    <span class="n">cancellation</span> <span class="o">=</span> <span class="n">_as_float_or_none</span><span class="p">(</span><span class="n">latest</span><span class="p">[</span><span class="s2">"cancellation_rate"</span><span class="p">])</span>
+    <span class="n">previous_late</span> <span class="o">=</span> <span class="n">_as_float_or_none</span><span class="p">(</span><span class="n">previous</span><span class="p">[</span><span class="s2">"late_rate"</span><span class="p">])</span> <span class="k">if</span> <span class="n">previous</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">previous_cancellation</span> <span class="o">=</span> <span class="n">_as_float_or_none</span><span class="p">(</span><span class="n">previous</span><span class="p">[</span><span class="s2">"cancellation_rate"</span><span class="p">])</span> <span class="k">if</span> <span class="n">previous</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"date"</span><span class="p">:</span> <span class="n">latest</span><span class="p">[</span><span class="s2">"date"</span><span class="p">],</span>
+        <span class="s2">"late_rate"</span><span class="p">:</span> <span class="n">late_rate</span><span class="p">,</span>
+        <span class="s2">"late_delta"</span><span class="p">:</span> <span class="n">late_rate</span> <span class="o">-</span> <span class="n">previous_late</span> <span class="k">if</span> <span class="n">late_rate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">previous_late</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="s2">"cancellation_rate"</span><span class="p">:</span> <span class="n">cancellation</span><span class="p">,</span>
+        <span class="s2">"cancellation_delta"</span><span class="p">:</span> <span class="p">(</span><span class="n">cancellation</span> <span class="o">-</span> <span class="n">previous_cancellation</span> <span class="k">if</span> <span class="n">cancellation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">previous_cancellation</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span><span class="p">),</span>
+    <span class="p">}</span></div>
+
+
+
+<div class="viewcode-block" id="overall_cause_distribution">
+<a class="viewcode-back" href="../../../modules.html#railinsight.analysis.overview.overall_cause_distribution">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">overall_cause_distribution</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Agrège les six causes en pondérant leur part par le nombre de retards.</span>
+
+<span class="sd">    Les colonnes de causes sont exprimées en pourcentage dans le dataset SNCF.</span>
+<span class="sd">    Une ligne associée à davantage de trains en retard pèse donc davantage dans</span>
+<span class="sd">    le résultat global.</span>
+<span class="sd">    """</span>
+    <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"cause"</span><span class="p">,</span> <span class="s2">"share"</span><span class="p">]</span>
+    <span class="n">required</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"late_arrival"</span><span class="p">,</span> <span class="o">*</span><span class="n">CAUSE_COLUMNS</span><span class="p">}</span>
+    <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">empty</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">required</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">columns</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span>
+
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">"late_arrival"</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"coerce"</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">lower</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">total_weight</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">total_weight</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span>
+
+    <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">column</span><span class="p">,</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">CAUSE_COLUMNS</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="n">column</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s2">"coerce"</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">share</span> <span class="o">=</span> <span class="nb">float</span><span class="p">((</span><span class="n">values</span> <span class="o">*</span> <span class="n">weights</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">total_weight</span><span class="p">)</span>
+        <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">"cause"</span><span class="p">:</span> <span class="n">label</span><span class="p">,</span> <span class="s2">"share"</span><span class="p">:</span> <span class="n">share</span><span class="p">})</span>
+
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span><span class="o">.</span><span class="n">sort_values</span><span class="p">(</span><span class="s2">"share"</span><span class="p">,</span> <span class="n">ascending</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">reset_index</span><span class="p">(</span><span class="n">drop</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">_rate_for_month_range</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">start</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Period</span><span class="p">,</span> <span class="n">end</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">Period</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Calcule un taux de retard agrégé entre deux mois inclus."""</span>
+    <span class="n">periods</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">"date"</span><span class="p">])</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">to_period</span><span class="p">(</span><span class="s2">"M"</span><span class="p">)</span>
+    <span class="n">subset</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">periods</span><span class="o">.</span><span class="n">between</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="n">subset</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+
+    <span class="n">scheduled</span> <span class="o">=</span> <span class="n">subset</span><span class="p">[</span><span class="s2">"scheduled"</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">cancelled</span> <span class="o">=</span> <span class="n">subset</span><span class="p">[</span><span class="s2">"cancelled"</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">effective</span> <span class="o">=</span> <span class="n">scheduled</span> <span class="o">-</span> <span class="n">cancelled</span>
+    <span class="k">if</span> <span class="n">effective</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">subset</span><span class="p">[</span><span class="s2">"late_arrival"</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">effective</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="format_month_fr">
+<a class="viewcode-back" href="../../../modules.html#railinsight.analysis.overview.format_month_fr">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">format_month_fr</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Formate une date en mois/année avec un libellé français stable."""</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">pd</span><span class="o">.</span><span class="n">isna</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">"—"</span>
+    <span class="n">date</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">MONTHS_FR</span><span class="p">[</span><span class="n">date</span><span class="o">.</span><span class="n">month</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">date</span><span class="o">.</span><span class="n">year</span><span class="si">}</span><span class="s2">"</span></div>
+
+
+
+<div class="viewcode-block" id="overview_highlights">
+<a class="viewcode-back" href="../../../modules.html#railinsight.analysis.overview.overview_highlights">[docs]</a>
+<span class="k">def</span><span class="w"> </span><span class="nf">overview_highlights</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Construit trois observations courtes pour contextualiser les KPI."""</span>
+    <span class="n">monthly</span> <span class="o">=</span> <span class="n">monthly_network_rates</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="n">default</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">"trend"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">"title"</span><span class="p">:</span> <span class="s2">"Tendance récente"</span><span class="p">,</span>
+            <span class="s2">"text"</span><span class="p">:</span> <span class="s2">"Les données disponibles ne permettent pas encore de comparer deux périodes de trois mois."</span><span class="p">,</span>
+            <span class="s2">"status"</span><span class="p">:</span> <span class="s2">"neutral"</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="s2">"worst_month"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">"title"</span><span class="p">:</span> <span class="s2">"Mois le plus perturbé"</span><span class="p">,</span>
+            <span class="s2">"text"</span><span class="p">:</span> <span class="s2">"Aucun taux mensuel exploitable n'est disponible."</span><span class="p">,</span>
+            <span class="s2">"status"</span><span class="p">:</span> <span class="s2">"neutral"</span><span class="p">,</span>
+        <span class="p">},</span>
+        <span class="s2">"dominant_cause"</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s2">"title"</span><span class="p">:</span> <span class="s2">"Cause la plus représentée"</span><span class="p">,</span>
+            <span class="s2">"text"</span><span class="p">:</span> <span class="s2">"La répartition des causes n'est pas disponible."</span><span class="p">,</span>
+            <span class="s2">"status"</span><span class="p">:</span> <span class="s2">"neutral"</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="n">monthly</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">default</span>
+
+    <span class="c1"># Comparaison de deux fenêtres calendaires consécutives de trois mois.</span>
+    <span class="n">latest_period</span> <span class="o">=</span> <span class="n">monthly</span><span class="p">[</span><span class="s2">"date"</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">to_period</span><span class="p">(</span><span class="s2">"M"</span><span class="p">)</span>
+    <span class="n">six_periods</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">period_range</span><span class="p">(</span><span class="n">end</span><span class="o">=</span><span class="n">latest_period</span><span class="p">,</span> <span class="n">periods</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span> <span class="n">freq</span><span class="o">=</span><span class="s2">"M"</span><span class="p">)</span>
+    <span class="n">observed_periods</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">monthly</span><span class="p">[</span><span class="s2">"date"</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">to_period</span><span class="p">(</span><span class="s2">"M"</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">six_periods</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">observed_periods</span><span class="p">):</span>
+        <span class="n">previous_start</span><span class="p">,</span> <span class="n">previous_end</span> <span class="o">=</span> <span class="n">six_periods</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">six_periods</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">recent_start</span><span class="p">,</span> <span class="n">recent_end</span> <span class="o">=</span> <span class="n">six_periods</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">six_periods</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+        <span class="n">previous_rate</span> <span class="o">=</span> <span class="n">_rate_for_month_range</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">previous_start</span><span class="p">,</span> <span class="n">previous_end</span><span class="p">)</span>
+        <span class="n">recent_rate</span> <span class="o">=</span> <span class="n">_rate_for_month_range</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="n">recent_start</span><span class="p">,</span> <span class="n">recent_end</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">previous_rate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">recent_rate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">delta_points</span> <span class="o">=</span> <span class="p">(</span><span class="n">recent_rate</span> <span class="o">-</span> <span class="n">previous_rate</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span>
+            <span class="k">if</span> <span class="n">delta_points</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">:</span>
+                <span class="n">status</span> <span class="o">=</span> <span class="s2">"good"</span>
+                <span class="n">title</span> <span class="o">=</span> <span class="s2">"Amélioration récente"</span>
+                <span class="n">verb</span> <span class="o">=</span> <span class="s2">"diminué"</span>
+            <span class="k">elif</span> <span class="n">delta_points</span> <span class="o">&gt;</span> <span class="mf">0.1</span><span class="p">:</span>
+                <span class="n">status</span> <span class="o">=</span> <span class="s2">"bad"</span>
+                <span class="n">title</span> <span class="o">=</span> <span class="s2">"Dégradation récente"</span>
+                <span class="n">verb</span> <span class="o">=</span> <span class="s2">"augmenté"</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">status</span> <span class="o">=</span> <span class="s2">"neutral"</span>
+                <span class="n">title</span> <span class="o">=</span> <span class="s2">"Situation plutôt stable"</span>
+                <span class="n">verb</span> <span class="o">=</span> <span class="s2">"est resté relativement stable"</span>
+
+            <span class="k">if</span> <span class="n">status</span> <span class="o">==</span> <span class="s2">"neutral"</span><span class="p">:</span>
+                <span class="n">text</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"Le taux de retard </span><span class="si">{</span><span class="n">verb</span><span class="si">}</span><span class="s2"> : </span><span class="si">{</span><span class="n">previous_rate</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2"> sur les trois mois précédents "</span>
+                    <span class="sa">f</span><span class="s2">"et </span><span class="si">{</span><span class="n">recent_rate</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2"> sur les trois derniers mois disponibles."</span>
+                <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">text</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"Le taux de retard a </span><span class="si">{</span><span class="n">verb</span><span class="si">}</span><span class="s2">, passant de </span><span class="si">{</span><span class="n">previous_rate</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2"> à </span><span class="si">{</span><span class="n">recent_rate</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2"> "</span>
+                    <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">delta_points</span><span class="si">:</span><span class="s2">+.1f</span><span class="si">}</span><span class="s2"> point(s) sur les deux périodes de trois mois)."</span>
+                <span class="p">)</span>
+            <span class="n">default</span><span class="p">[</span><span class="s2">"trend"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"title"</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span> <span class="s2">"text"</span><span class="p">:</span> <span class="n">text</span><span class="p">,</span> <span class="s2">"status"</span><span class="p">:</span> <span class="n">status</span><span class="p">}</span>
+
+    <span class="c1"># Le mois est accompagné du volume de circulations effectives pour donner du contexte.</span>
+    <span class="n">valid_months</span> <span class="o">=</span> <span class="n">monthly</span><span class="o">.</span><span class="n">dropna</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="p">[</span><span class="s2">"late_rate"</span><span class="p">])</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">valid_months</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="n">worst</span> <span class="o">=</span> <span class="n">valid_months</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">valid_months</span><span class="p">[</span><span class="s2">"late_rate"</span><span class="p">]</span><span class="o">.</span><span class="n">idxmax</span><span class="p">()]</span>
+        <span class="n">effective</span> <span class="o">=</span> <span class="n">worst</span><span class="p">[</span><span class="s2">"scheduled"</span><span class="p">]</span> <span class="o">-</span> <span class="n">worst</span><span class="p">[</span><span class="s2">"cancelled"</span><span class="p">]</span>
+        <span class="n">effective_label</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">effective</span><span class="si">:</span><span class="s2">,.0f</span><span class="si">}</span><span class="s2">"</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">","</span><span class="p">,</span> <span class="s2">" "</span><span class="p">)</span>
+        <span class="n">default</span><span class="p">[</span><span class="s2">"worst_month"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"title"</span><span class="p">:</span> <span class="s2">"Mois le plus perturbé"</span><span class="p">,</span>
+            <span class="s2">"text"</span><span class="p">:</span> <span class="p">(</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">format_month_fr</span><span class="p">(</span><span class="n">worst</span><span class="p">[</span><span class="s1">'date'</span><span class="p">])</span><span class="si">}</span><span class="s2"> présente le taux de retard mensuel le plus élevé "</span>
+                <span class="sa">f</span><span class="s2">"(</span><span class="si">{</span><span class="n">worst</span><span class="p">[</span><span class="s1">'late_rate'</span><span class="p">]</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">), pour </span><span class="si">{</span><span class="n">effective_label</span><span class="si">}</span><span class="s2"> circulations effectives."</span>
+            <span class="p">),</span>
+            <span class="s2">"status"</span><span class="p">:</span> <span class="s2">"neutral"</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="n">causes</span> <span class="o">=</span> <span class="n">overall_cause_distribution</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">causes</span><span class="o">.</span><span class="n">empty</span><span class="p">:</span>
+        <span class="n">dominant</span> <span class="o">=</span> <span class="n">causes</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">default</span><span class="p">[</span><span class="s2">"dominant_cause"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">"title"</span><span class="p">:</span> <span class="s2">"Cause la plus représentée"</span><span class="p">,</span>
+            <span class="s2">"text"</span><span class="p">:</span> <span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">dominant</span><span class="p">[</span><span class="s1">'cause'</span><span class="p">]</span><span class="si">}</span><span class="s2"> arrive en tête avec une part pondérée de </span><span class="si">{</span><span class="n">dominant</span><span class="p">[</span><span class="s1">'share'</span><span class="p">]</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2"> % des causes de retard."</span><span class="p">),</span>
+            <span class="s2">"status"</span><span class="p">:</span> <span class="s2">"neutral"</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">default</span></div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Droits d'auteur .</p>
+  </div>
+
+  Compilé avec <a href="https://www.sphinx-doc.org/">Sphinx</a> en utilisant un
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">thème</a>
+    fourni par <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -4,7 +4,7 @@ import pandas as pd
 import pytest
 
 from railinsight.analysis.trip import OUTCOME_LABELS
-from railinsight.viz.trip import causes_bar, causes_pie, comparison_bars, outcomes_bar
+from railinsight.viz.trip import causes_bar, comparison_bars, outcomes_bar
 
 
 def test_outcomes_use_three_exclusive_parts_summing_to_one_hundred():
@@ -21,7 +21,9 @@ def test_outcomes_use_three_exclusive_parts_summing_to_one_hundred():
 @pytest.mark.parametrize("category", ["period", "direction"])
 def test_comparisons_group_rates_and_show_exposure(category):
     """La comparaison affiche les populations de référence sans additionner les trois taux."""
-    data = pd.DataFrame({category: ["A", "B"], "scheduled": [100, 200], "late_rate": [0.2, 0.1], "cancellation_rate": [0.1, 0.05], "disruption_rate": [0.28, 0.145]})
+    data = pd.DataFrame(
+        {category: ["A", "B"], "scheduled": [100, 200], "late_rate": [0.2, 0.1], "cancellation_rate": [0.1, 0.05], "disruption_rate": [0.28, 0.145]}
+    )
     fig = comparison_bars(data, category)
     assert fig.layout.barmode == "group"
     assert fig.layout.yaxis.tickformat == ".0%"
@@ -35,9 +37,7 @@ def test_unknown_cause_is_grey_and_published_values_are_preserved():
     data = pd.Series({"cause_infra": 40.0, "cause_unallocated": 60.0})
     fig = causes_bar(data)
     grey = next(trace for trace in fig.data if trace.name == "Part non ventilée dans les données")
-    assert grey.marker.color == "#9CA3AF"
+    assert grey.marker.color == "#B4BFCD"
     assert grey.x[0] == 60.0
     assert list(fig.layout.xaxis.range) == [0, 100]
-    legacy = causes_pie(data)
-    assert legacy.data[0].values.tolist() == [40.0, 60.0]
-    assert "value" in legacy.data[0].texttemplate
+    assert fig.data[0].texttemplate == "%{x:.1f} %"

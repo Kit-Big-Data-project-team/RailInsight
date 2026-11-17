@@ -13,8 +13,17 @@ Données & ETL
 .. automodule:: railinsight.data.loader
    :members:
 
-Analyses
---------
+.. automodule:: railinsight.database.conf_db
+   :members:
+
+.. automodule:: railinsight.database.db_table
+   :members:
+
+.. automodule:: railinsight.database.init_db
+   :members:
+
+Analyses et calculs
+-------------------
 
 .. automodule:: railinsight.analysis.metrics
    :members:
@@ -34,7 +43,7 @@ Analyses
 Visualisations
 --------------
 
-.. automodule:: railinsight.viz.charts
+.. automodule:: railinsight.viz.overview
    :members:
 
 .. automodule:: railinsight.viz.history
@@ -45,3 +54,7 @@ Visualisations
 
 .. automodule:: railinsight.viz.trip
    :members:
+
+.. automodule:: railinsight.viz.theme
+   :members:
+

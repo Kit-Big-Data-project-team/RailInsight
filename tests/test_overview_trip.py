@@ -1,49 +1,70 @@
-"""Tests des métriques des pages Overview (tâche 3) et Mon trajet (tâche 6)."""
+"""Tests des métriques de synthèse de la page Overview."""
 
 import pandas as pd
 
 from railinsight.analysis.history import CAUSE_COLUMNS
-from railinsight.analysis.overview import global_kpis
-from railinsight.analysis.trip import average_causes, trip_summary
+from railinsight.analysis.overview import (
+    latest_month_kpis,
+    overall_cause_distribution,
+    overview_highlights,
+)
 
 
-def _sample() -> pd.DataFrame:
-    base = {c: 0.0 for c in CAUSE_COLUMNS}
-    return pd.DataFrame(
+def _row(date: str, scheduled: int, cancelled: int, late: int, cause: str = "cause_external") -> dict:
+    row = {column: 0.0 for column in CAUSE_COLUMNS}
+    row.update(
+        {
+            "date": date,
+            "route": "Paris → Lyon",
+            "scheduled": scheduled,
+            "cancelled": cancelled,
+            "late_arrival": late,
+        }
+    )
+    row[cause] = 100.0
+    return row
+
+
+def test_latest_month_kpis_compare_with_previous_calendar_month():
+    df = pd.DataFrame(
         [
-            {**base, "route": "A", "date": "2026-01-01", "scheduled": 100, "cancelled": 2, "late_arrival": 10, "avg_delay_arrival": 12.0, "cause_infra": 100.0},
-            {**base, "route": "A", "date": "2026-02-01", "scheduled": 100, "cancelled": 0, "late_arrival": 30, "avg_delay_arrival": 8.0, "cause_external": 100.0},
-            {**base, "route": "B", "date": "2026-01-01", "scheduled": 50, "cancelled": 5, "late_arrival": 5, "avg_delay_arrival": 20.0, "cause_infra": 100.0},
+            _row("2026-01-01", scheduled=100, cancelled=10, late=9),
+            _row("2026-02-01", scheduled=100, cancelled=0, late=20),
         ]
     )
 
+    result = latest_month_kpis(df)
 
-def test_global_kpis():
-    kpis = global_kpis(_sample())
-
-    assert kpis["n_routes"] == 2
-    assert kpis["scheduled"] == 250
-    # retard : 45 / (250 - 7) ; annulation : 7 / 250
-    assert kpis["late_rate"] == 45 / 243
-    assert kpis["cancellation_rate"] == 7 / 250
+    assert result["late_rate"] == 20 / 100
+    assert result["late_delta"] == 20 / 100 - 9 / 90
+    assert result["cancellation_rate"] == 0
+    assert result["cancellation_delta"] == -0.10
 
 
-def test_trip_summary_for_one_route():
-    sub = _sample()
-    sub = sub[sub["route"] == "A"]
-    resume = trip_summary(sub)
+def test_overall_causes_are_weighted_by_number_of_late_trains():
+    df = pd.DataFrame(
+        [
+            _row("2026-01-01", scheduled=100, cancelled=0, late=10, cause="cause_infra"),
+            _row("2026-01-01", scheduled=100, cancelled=0, late=30, cause="cause_external"),
+        ]
+    )
 
-    assert resume["n_months"] == 2
-    assert resume["cancellation_probability"] == 2 / 200
-    assert resume["late_rate"] == 40 / 198
-    # retard moyen pondéré par les trains en retard : (12*10 + 8*30) / 40
-    assert resume["avg_delay_arrival"] == (12 * 10 + 8 * 30) / 40
+    result = overall_cause_distribution(df).set_index("cause")
+
+    assert result.loc["Causes externes", "share"] == 75.0
+    assert result.loc["Infrastructure", "share"] == 25.0
 
 
-def test_average_causes_weighted():
-    sub = _sample()
-    sub = sub[sub["route"] == "A"]
-    causes = average_causes(sub)
+def test_overview_highlights_compare_the_latest_three_months_to_the_previous_three():
+    rows = []
+    for month in range(1, 7):
+        late = 10 if month <= 3 else (20 if month <= 5 else 30)
+        rows.append(_row(f"2026-{month:02d}-01", scheduled=100, cancelled=0, late=late))
+    df = pd.DataFrame(rows)
 
-    assert round(causes["cause_external"], 2) == round(100 * 30 / 40, 2)
-    assert round(causes["cause_infra"], 2) == round(100 * 10 / 40, 2)
+    result = overview_highlights(df)
+
+    assert result["trend"]["status"] == "bad"
+    assert "10.0%" in result["trend"]["text"]
+    assert "juin 2026" in result["worst_month"]["text"]
+    assert result["dominant_cause"]["title"] == "Cause la plus représentée"

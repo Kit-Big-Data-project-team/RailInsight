@@ -1,8 +1,10 @@
-"""Graphiques de la page Historique & évolution (tâche 4)."""
+"""Graphiques de la page Historique & évolution."""
 
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+
+from railinsight.viz.theme import CAUSE_COLORS
 
 # Libellés lisibles des causes pour les légendes.
 CAUSE_LABELS = {
@@ -83,7 +85,7 @@ def cause_area(df: pd.DataFrame, title: str = "Répartition des causes de retard
         color="Cause",
         title=title,
         labels={"date": ""},
-        color_discrete_map={"Part non ventilée dans les données": "#9CA3AF"},
+        color_discrete_map=CAUSE_COLORS,
     )
     fig.update_yaxes(ticksuffix=" %", rangemode="tozero")
     fig.update_traces(hovertemplate="%{x|%m/%Y}<br>Part : %{y:.1f} %<extra>%{fullData.name}</extra>", connectgaps=False)
@@ -111,7 +113,16 @@ def seasonality_bar(df: pd.DataFrame, title: str = "Comparaison par mois de l'an
     data["Mois"] = data["month"].map(MONTH_LABELS)
     long = data.melt(id_vars=["Mois", "n_years"], value_vars=list(labels), var_name="Indicateur", value_name="Taux")
     long["Indicateur"] = long["Indicateur"].map(labels)
-    fig = px.bar(long, x="Mois", y="Taux", color="Indicateur", barmode="group", title=title, custom_data=["n_years"], category_orders={"Mois": list(MONTH_LABELS.values())})
+    fig = px.bar(
+        long,
+        x="Mois",
+        y="Taux",
+        color="Indicateur",
+        barmode="group",
+        title=title,
+        custom_data=["n_years"],
+        category_orders={"Mois": list(MONTH_LABELS.values())},
+    )
     fig.update_yaxes(tickformat=".0%", rangemode="tozero")
     fig.update_traces(hovertemplate="%{x}<br>Taux : %{y:.1%}<br>Années contributrices : %{customdata[0]}<extra>%{fullData.name}</extra>")
     return fig
