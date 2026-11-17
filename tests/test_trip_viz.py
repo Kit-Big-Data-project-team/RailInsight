@@ -39,5 +39,5 @@ def test_unknown_cause_is_grey_and_published_values_are_preserved():
     grey = next(trace for trace in fig.data if trace.name == "Part non ventilée dans les données")
     assert grey.marker.color == "#B4BFCD"
     assert grey.x[0] == 60.0
-    assert list(fig.layout.xaxis.range) == [0, 100]
+    assert fig.layout.xaxis.autorange is True
     assert fig.data[0].texttemplate == "%{x:.1f} %"
