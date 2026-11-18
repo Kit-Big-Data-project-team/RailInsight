@@ -1,19 +1,13 @@
 
 """Entraîne et évalue un modèle de prédiction des retards TGV."""
 
-from sklearn.ensemble import RandomForestRegressor
+from railinsight.analysis.prediction_model import FEATURES, create_model
 from sklearn.metrics import mean_absolute_error
 
 from railinsight.analysis.prepare_prediction import prepare_prediction_data
 
 
-FEATURES = [
-    "late_rate_lag1",
-    "late_rate_lag2",
-    "late_rate_lag3",
-    "late_rate_mean3",
-    "month",
-]
+
 
 
 def main() -> None:
@@ -26,12 +20,7 @@ def main() -> None:
     train = df[df["date"] < "2025-01-01"]
     test = df[df["date"] >= "2025-01-01"]
 
-    model = RandomForestRegressor(
-        n_estimators=100,
-        max_depth=8,
-        random_state=42,
-        n_jobs=-1,
-    )
+    model = create_model()
 
     model.fit(train[FEATURES], train["late_rate"])
 

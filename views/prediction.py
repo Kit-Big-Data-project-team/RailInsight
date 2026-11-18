@@ -3,28 +3,15 @@
 
 import pandas as pd
 import streamlit as st
-from sklearn.ensemble import RandomForestRegressor
+from railinsight.analysis.prediction_model import FEATURES, create_model
 from sklearn.metrics import mean_absolute_error
 
 from railinsight.analysis.prepare_prediction import prepare_prediction_data
 from railinsight.analysis.forecast import get_recent_rates
 
-FEATURES = [
-    "late_rate_lag1",
-    "late_rate_lag2",
-    "late_rate_lag3",
-    "late_rate_mean3",
-    "month",
-]
 
 
-def create_model():
-    return RandomForestRegressor(
-        n_estimators=100,
-        max_depth=8,
-        random_state=42,
-        n_jobs=-1,
-    )
+
 
 
 @st.cache_data(show_spinner="Calcul des prédictions...")
