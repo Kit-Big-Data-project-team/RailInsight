@@ -1,13 +1,9 @@
-
 """Entraînement et évaluation du modèle de prédiction des retards TGV."""
 
-from railinsight.analysis.prediction_model import FEATURES, create_model
 from sklearn.metrics import mean_absolute_error
 
+from railinsight.analysis.prediction_model import FEATURES, create_model
 from railinsight.analysis.prepare_prediction import prepare_prediction_data
-
-
-
 
 
 def main() -> None:
@@ -38,25 +34,15 @@ def main() -> None:
     # Référence : reprendre le taux observé le mois précédent.
     baseline = test["late_rate_lag1"]
 
-    mae_baseline = mean_absolute_error(
-        test["late_rate"], baseline
-    )
-    mae_model = mean_absolute_error(
-        test["late_rate"], predictions
-    )
+    mae_baseline = mean_absolute_error(test["late_rate"], baseline)
+    mae_model = mean_absolute_error(test["late_rate"], predictions)
 
     print("\n===== EVALUATION DU MODELE =====")
     print(f"Observations entraînement : {len(train)}")
     print(f"Observations test : {len(test)}")
 
-    print(
-        f"MAE référence : {mae_baseline * 100:.2f} "
-        "points de pourcentage"
-    )
-    print(
-        f"MAE Random Forest : {mae_model * 100:.2f} "
-        "points de pourcentage"
-    )
+    print(f"MAE référence : {mae_baseline * 100:.2f} " "points de pourcentage")
+    print(f"MAE Random Forest : {mae_model * 100:.2f} " "points de pourcentage")
 
     if mae_model < mae_baseline:
         print("La Random Forest améliore la référence.")

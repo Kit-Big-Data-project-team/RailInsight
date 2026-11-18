@@ -1,4 +1,3 @@
-
 """Tests de préparation des données pour la prédiction."""
 
 import pandas as pd
@@ -9,14 +8,16 @@ from railinsight.analysis.prepare_prediction import prepare_prediction_data
 
 def make_data(months, liaison="PARIS -> LYON", service="National"):
     """Crée des observations mensuelles fictives."""
-    return pd.DataFrame({
-        "date": pd.to_datetime(months),
-        "liaison": liaison,
-        "service": service,
-        "scheduled": [100] * len(months),
-        "cancelled": [0] * len(months),
-        "late_arrival": [10 * (i + 1) for i in range(len(months))],
-    })
+    return pd.DataFrame(
+        {
+            "date": pd.to_datetime(months),
+            "liaison": liaison,
+            "service": service,
+            "scheduled": [100] * len(months),
+            "cancelled": [0] * len(months),
+            "late_arrival": [10 * (i + 1) for i in range(len(months))],
+        }
+    )
 
 
 def mock_loader(monkeypatch, df):
@@ -38,20 +39,20 @@ def mock_loader(monkeypatch, df):
 
 def test_lags_use_previous_months(monkeypatch):
     """La cible d'avril utilise janvier, février et mars."""
-    df = make_data([
-        "2026-01-01",
-        "2026-02-01",
-        "2026-03-01",
-        "2026-04-01",
-        "2026-05-01",
-    ])
+    df = make_data(
+        [
+            "2026-01-01",
+            "2026-02-01",
+            "2026-03-01",
+            "2026-04-01",
+            "2026-05-01",
+        ]
+    )
 
     mock_loader(monkeypatch, df)
     result = prepare_prediction_data()
 
-    april = result.loc[
-        result["date"] == pd.Timestamp("2026-04-01")
-    ].iloc[0]
+    april = result.loc[result["date"] == pd.Timestamp("2026-04-01")].iloc[0]
 
     assert april["late_rate"] == pytest.approx(0.4)
     assert april["late_rate_lag1"] == pytest.approx(0.3)
@@ -63,12 +64,14 @@ def test_lags_use_previous_months(monkeypatch):
 
 def test_missing_month_is_not_treated_as_previous_month(monkeypatch):
     """Une interruption dans l'historique invalide les décalages."""
-    df = make_data([
-        "2026-01-01",
-        "2026-02-01",
-        "2026-04-01",
-        "2026-05-01",
-    ])
+    df = make_data(
+        [
+            "2026-01-01",
+            "2026-02-01",
+            "2026-04-01",
+            "2026-05-01",
+        ]
+    )
 
     mock_loader(monkeypatch, df)
     result = prepare_prediction_data()
@@ -98,27 +101,26 @@ def test_liaisons_are_independent(monkeypatch):
 
     assert len(result) == 2
 
-    paris_lyon = result[
-        result["liaison"] == "PARIS -> LYON"
-    ].iloc[0]
+    paris_lyon = result[result["liaison"] == "PARIS -> LYON"].iloc[0]
 
-    lyon_paris = result[
-        result["liaison"] == "LYON -> PARIS"
-    ].iloc[0]
+    lyon_paris = result[result["liaison"] == "LYON -> PARIS"].iloc[0]
 
     assert paris_lyon["late_rate_lag1"] == pytest.approx(0.3)
     assert lyon_paris["late_rate_lag1"] == pytest.approx(0.15)
+
 
 def test_main_displays_prediction_summary(monkeypatch, capsys):
     """Vérifie que le script affiche un résumé des données préparées."""
     from railinsight.analysis.prepare_prediction import main
 
-    df = make_data([
-        "2026-01-01",
-        "2026-02-01",
-        "2026-03-01",
-        "2026-04-01",
-    ])
+    df = make_data(
+        [
+            "2026-01-01",
+            "2026-02-01",
+            "2026-03-01",
+            "2026-04-01",
+        ]
+    )
 
     mock_loader(monkeypatch, df)
 

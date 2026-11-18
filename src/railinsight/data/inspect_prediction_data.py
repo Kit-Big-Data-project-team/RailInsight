@@ -1,4 +1,3 @@
-
 """Inspecte les données disponibles pour préparer la prédiction des retards TGV."""
 
 from railinsight.data.loader import TGVDataset
@@ -63,24 +62,17 @@ def main() -> None:
 
     print("\n===== VERIFICATIONS AVANT PREDICTION =====")
     # 1. Doublons selon la véritable clé métier
-    nb_doublons = df.duplicated(
-    subset=["date", "service", "origin", "destination"]
-    ).sum()
+    nb_doublons = df.duplicated(subset=["date", "service", "origin", "destination"]).sum()
 
     print("Doublons sur la clé métier :", nb_doublons)
-    
+
     # 2. Vérifier les liaisons présentes dans plusieurs services
     print("\nLiaisons avec plusieurs services :")
-    print(
-    df.groupby("liaison")["service"]
-    .nunique()
-    .loc[lambda x: x > 1]
-    .head(10)
-    )
+    print(df.groupby("liaison")["service"].nunique().loc[lambda x: x > 1].head(10))
 
     # 3. Vérifier les circulations nulles
     print("\nLignes avec zéro circulation prévue :")
-    print((df["scheduled"] == 0).sum())   
+    print((df["scheduled"] == 0).sum())
 
     # 4. Vérifier la cohérence des nombres de trains
     print("\nLignes avec annulations > circulations prévues :")
