@@ -7,7 +7,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error
 
 from railinsight.analysis.prepare_prediction import prepare_prediction_data
-
+from railinsight.analysis.forecast import get_recent_rates
 
 FEATURES = [
     "late_rate_lag1",
@@ -63,23 +63,12 @@ def load_predictions():
         ["liaison", "service"]
     ):
         group = group.sort_values("date")
-        recent = group.tail(3)
+        
+        rates = get_recent_rates(group, latest_month)
 
-        # On exige trois mois récents consécutifs.
-        expected_months = [
-            latest_month - 2,
-            latest_month - 1,
-            latest_month,
-        ]
-        actual_months = list(
-            recent["date"].dt.to_period("M")
-        )
-
-        if actual_months != expected_months:
-            continue
-
-        rates = recent["late_rate"].tolist()
-
+        if rates is None:
+         continue
+        
         future_features = pd.DataFrame([{
             "late_rate_lag1": rates[-1],
             "late_rate_lag2": rates[-2],
