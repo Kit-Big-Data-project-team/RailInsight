@@ -17,8 +17,6 @@ extensions = [
 ]
 
 autodoc_mock_imports = [
-    "pandas",
-    "plotly",
     "requests",
     "sqlalchemy",
     "streamlit",

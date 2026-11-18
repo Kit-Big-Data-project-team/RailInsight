@@ -1,15 +1,33 @@
+"""Définition du schéma de stockage des données de régularité TGV."""
+
 from sqlalchemy import Column, Date, Integer, MetaData, Numeric, String, Table, UniqueConstraint
 
+"""Nom de la table PostgreSQL contenant les indicateurs de régularité TGV."""
 TABLE_NAME = "regularite_tgv"
+
+"""Colonnes définissant l'identifiant unique d'une observation."""
 KEY = [
     "date",
     "service",
     "gare_depart",
     "gare_arrivee",
 ]
+
+"""Métadonnées SQLAlchemy regroupant les définitions des tables de l'application."""
 metadata = MetaData()
 
-# Table schema
+"""Table de stockage des indicateurs mensuels de régularité des TGV.
+
+Elle regroupe les informations sur les circulations, les annulations,
+les retards au départ et à l'arrivée, les seuils de retard et leur répartition
+par cause.
+
+Les champs d'identification sont obligatoires. Les autres indicateurs peuvent
+être NULL lorsqu'ils ne sont pas renseignés dans les données sources.
+
+Une contrainte d'unicité empêche les doublons pour une même date, un même
+service et une même liaison ferroviaire.
+"""
 regularite_tgv_table = Table(
     TABLE_NAME,
     metadata,

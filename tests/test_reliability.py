@@ -1,4 +1,4 @@
-"""Tests des métriques de la page Fiabilité (tâche 5)."""
+"""Tests des métriques de la page Fiabilité."""
 
 import pandas as pd
 

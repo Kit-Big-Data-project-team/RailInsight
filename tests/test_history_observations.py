@@ -10,7 +10,13 @@ def _data():
     """Trois mois aux volumes et perturbations différents, dont deux lignes en janvier."""
     return pd.DataFrame(
         [
-            {"date": date, "scheduled": scheduled, "cancelled": cancelled, "late_arrival": late, **{cause: 100.0 if cause == "cause_infra" else 0.0 for cause in CAUSE_COLUMNS}}
+            {
+                "date": date,
+                "scheduled": scheduled,
+                "cancelled": cancelled,
+                "late_arrival": late,
+                **{cause: 100.0 if cause == "cause_infra" else 0.0 for cause in CAUSE_COLUMNS},
+            }
             for date, scheduled, cancelled, late in [
                 ("2025-01-01", 10, 2, 3),
                 ("2025-01-01", 90, 0, 5),

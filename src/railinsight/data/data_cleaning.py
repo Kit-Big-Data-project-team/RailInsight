@@ -8,6 +8,8 @@ import logging
 
 import pandas as pd
 
+from railinsight.exceptions import DataCleaningError
+
 # Configuration du logger pour enregistrer les événements du pipeline de nettoyage
 logger = logging.getLogger(__name__)
 
@@ -37,12 +39,6 @@ COLUMNS = [
     "prct_cause_gestion_gare",
     "prct_cause_prise_en_charge_voyageurs",
 ]
-
-
-class DataCleaningError(Exception):
-    """Exception personnalisée levée en cas d'échec critique lors du nettoyage des données."""
-
-    pass
 
 
 def nettoyer_donnees(data: list[dict] | pd.DataFrame) -> pd.DataFrame:

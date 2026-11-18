@@ -5,7 +5,14 @@ import logging
 import pandas as pd
 import streamlit as st
 
-from railinsight.analysis.trip import average_causes, filter_trip_period, outcomes_per_100, recent_trip_evolution, reverse_trip_comparison, trip_summary
+from railinsight.analysis.trip import (
+    average_causes,
+    filter_trip_period,
+    outcomes_per_100,
+    recent_trip_evolution,
+    reverse_trip_comparison,
+    trip_summary,
+)
 from railinsight.data.loader import TGVDataset
 from railinsight.exceptions import RailInsightError
 from railinsight.viz.history import MONTH_LABELS
@@ -60,7 +67,8 @@ try:
         f"mois distincts et {summary['scheduled']:,} circulations prévues enregistrées.".replace(",", " ")
     )
     st.caption(
-        "Ces fréquences historiques décrivent les circulations enregistrées, pas les voyageurs ni la probabilité de votre prochain train. Les mois absents ne sont pas remplacés par zéro."
+        "Ces fréquences historiques décrivent les circulations enregistrées, pas les voyageurs ni la probabilité de votre prochain train. "
+        "Les mois absents ne sont pas remplacés par zéro."
     )
     columns = st.columns(4)
     columns[0].metric("Taux historique d'annulation", percent(summary["cancellation_rate"]))
@@ -84,7 +92,10 @@ try:
         on_time = f"{values.iloc[0]:.1f}".replace(".", ",")
         late = f"{values.iloc[1]:.1f}".replace(".", ",")
         cancelled = f"{values.iloc[2]:.1f}".replace(".", ",")
-        st.write(f"Sur une base historique de 100 circulations prévues : environ {on_time} à l'heure selon les seuils SNCF, {late} arrivées en retard et {cancelled} annulations.")
+        st.write(
+            f"Sur une base historique de 100 circulations prévues : "
+            f"environ {on_time} à l'heure selon les seuils SNCF, {late} arrivées en retard et {cancelled} annulations."
+        )
         st.caption(
             "Aucun tirage aléatoire : les effectifs de toute la liaison et de la période sélectionnées sont ramenés "
             "à une base de 100, puis arrondis pour la lecture. Ce ne sont pas 100 trains sélectionnés ni une prévision. "
@@ -140,8 +151,6 @@ try:
             "Les deux directions sont recalculées sur les mêmes mois. Si cette couverture est plus courte, leurs "
             "résultats peuvent différer de la synthèse ci-dessus. Les volumes de circulation peuvent aussi différer."
         )
-        with st.expander("Mois retenus pour la comparaison"):
-            st.write(", ".join(month_label(month) for month in common))
 
     st.subheader("Causes déclarées des retards")
     causes = average_causes(sub)

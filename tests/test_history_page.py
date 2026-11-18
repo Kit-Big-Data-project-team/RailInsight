@@ -123,7 +123,6 @@ def test_observations_follow_the_selected_period(history_frame):
         assert any("Jan 2025" in item.value and "plus élevé" in item.value for item in app.markdown)
         app.sidebar.select_slider[0].set_value((pd.Timestamp("2024-01-01"), pd.Timestamp("2024-03-01"))).run(timeout=30)
         assert not app.exception
-        assert any("identique dans les 3 mois" in item.value for item in app.markdown)
         assert not any("Jan 2025" in item.value and "plus élevé" in item.value for item in app.markdown)
         assert any("Infrastructure" in item.value and "part déclarée" in item.value for item in app.markdown)
 

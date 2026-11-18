@@ -1,6 +1,6 @@
 """
 Description :
-Page Historique & évolution (tâche 4) : évolution des retards et des annulations
+Page Historique & évolution : évolution des retards et des annulations
 dans le temps, répartition par cause et saisonnalité, pour les liaisons disponibles ou une liaison.
 """
 
@@ -23,7 +23,15 @@ from railinsight.analysis.history import (
 )
 from railinsight.data.loader import TGVDataset
 from railinsight.exceptions import RailInsightError
-from railinsight.viz.history import CAUSE_LABELS, MONTH_LABELS, cause_area, delays_cancellations_line, seasonality_bar, service_line, severity_area
+from railinsight.viz.history import (
+    CAUSE_LABELS,
+    MONTH_LABELS,
+    cause_area,
+    delays_cancellations_line,
+    seasonality_bar,
+    service_line,
+    severity_area,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -36,7 +44,8 @@ def load() -> TGVDataset:
 
 st.title("Historique & évolution des retards")
 st.write(
-    "Évolution des retards et des annulations dans le temps, répartition par cause " "et saisonnalité. Choisissez une liaison dans le menu, ou consultez toutes les liaisons disponibles."
+    "Évolution des retards et des annulations dans le temps, répartition par cause "
+    "et saisonnalité. Choisissez une liaison dans le menu, ou consultez toutes les liaisons disponibles."
 )
 
 ds = load()
@@ -61,7 +70,9 @@ try:
     summary = history_period_summary(data)
     columns = st.columns(4)
     for column, key, label in zip(
-        columns[:3], ("late_rate", "cancellation_rate", "disruption_rate"), ("Taux de retard sur la période", "Taux d'annulation sur la période", "Taux de perturbation sur la période")
+        columns[:3],
+        ("late_rate", "cancellation_rate", "disruption_rate"),
+        ("Taux de retard sur la période", "Taux d'annulation sur la période", "Taux de perturbation sur la période"),
     ):
         value = summary[key]
         column.metric(label, f"{value:.1%}" if value is not None else "—")
@@ -74,7 +85,10 @@ try:
             "donc pas les taux officiels du réseau TGV et ne comptent pas nécessairement "
             "chaque train une seule fois."
         )
-    st.caption("Source et limites : [SNCF — Régularité mensuelle TGV par liaisons]" "(https://ressources.data.sncf.com/explore/dataset/regularite-mensuelle-tgv-aqst/information/).")
+    st.caption(
+        "Source et limites : [SNCF — Régularité mensuelle TGV par liaisons]"
+        "(https://ressources.data.sncf.com/explore/dataset/regularite-mensuelle-tgv-aqst/information/)."
+    )
 
     st.subheader("Retards, annulations et perturbations dans le temps")
     st.caption(
@@ -86,40 +100,60 @@ try:
     )
     st.plotly_chart(delays_cancellations_line(monthly_delays_cancellations(data)), width="stretch")
     observations = history_trend_observations(data)
-    st.markdown("**À retenir pour cette sélection**")
+    st.subheader("Ce qu'il faut retenir")
     peak_rate = observations["peak_disruption_rate"]
     peaks = observations["peak_months"]
-    if peak_rate is None:
-        st.write("Les taux mensuels de perturbation sont indisponibles : aucun maximum ne peut être déterminé.")
-    elif observations["disrupted_count"] == 0:
-        st.write("Aucun retard ni aucune annulation n'est enregistré dans cette sélection.")
-    elif observations["constant_rate"]:
-        value = f"{peak_rate:.1%}".replace(".", ",")
-        st.write(f"Le taux de perturbation est identique dans les {observations['n_valid_months']} mois calculables : {value}.")
-    elif len(peaks) == 1:
-        peak = peaks.iloc[0]
-        date = pd.Timestamp(peak["date"])
-        value = f"{peak_rate:.1%}".replace(".", ",")
-        st.write(
-            f"Le taux de perturbation le plus élevé de la sélection est observé en {MONTH_LABELS[date.month]} {date.year} : {value}, "
-            f"pour {int(peak['scheduled'])} circulations prévues enregistrées "
-            f"({int(peak['cancelled'])} annulations et {int(peak['late_arrival'])} arrivées en retard)."
-        )
-    else:
-        dates = [pd.Timestamp(date) for date in peaks["date"]]
-        names = ", ".join(f"{MONTH_LABELS[date.month]} {date.year}" for date in dates[:3])
-        remainder = f", et {len(dates) - 3} autre(s) mois" if len(dates) > 3 else ""
-        value = f"{peak_rate:.1%}".replace(".", ",")
-        st.write(f"Le maximum de perturbation ({value}) est partagé par {len(dates)} mois : {names}{remainder}.")
-    if observations["cancelled_share"] is not None:
-        cancelled = f"{observations['cancelled_share']:.1%}".replace(".", ",")
-        late = f"{observations['late_share']:.1%}".replace(".", ",")
-        st.write(
-            f"Sur la période sélectionnée, parmi les perturbations enregistrées, {cancelled} correspondent à des annulations "
-            f"et {late} à des arrivées en retard. Ces parts décrivent les effectifs et non la gravité des conséquences."
-        )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        with st.container(border=True):
+            st.markdown("**Période la plus perturbée**")
+
+            if peak_rate is None:
+                st.write("Aucun maximum ne peut être déterminé.")
+            elif observations["disrupted_count"] == 0:
+                st.write("Aucun retard ni aucune annulation n'est enregistré.")
+            elif observations["constant_rate"]:
+                value = f"{peak_rate:.1%}".replace(".", ",")
+                st.write(f"Le taux de perturbation est identique dans {observations['n_valid_months']} mois : {value}.")
+            elif len(peaks) == 1:
+                peak = peaks.iloc[0]
+                date = pd.Timestamp(peak["date"])
+                value = f"{peak_rate:.1%}".replace(".", ",")
+                st.write(
+                    f"Le taux de perturbation le plus élevé est observé en "
+                    f"{MONTH_LABELS[date.month]} {date.year} : {value}, "
+                    f"pour {int(peak['scheduled'])} circulations prévues "
+                    f"({int(peak['cancelled'])} annulations et "
+                    f"{int(peak['late_arrival'])} arrivées en retard)."
+                )
+            else:
+                dates = [pd.Timestamp(date) for date in peaks["date"]]
+                names = ", ".join(f"{MONTH_LABELS[date.month]} {date.year}" for date in dates[:3])
+                remainder = f", et {len(dates) - 3} autre(s) mois" if len(dates) > 3 else ""
+                value = f"{peak_rate:.1%}".replace(".", ",")
+                st.write(f"Le maximum de perturbation ({value}) est partagé par {len(dates)} mois : {names}{remainder}.")
+
+    with col2:
+        with st.container(border=True):
+            st.markdown("**Répartition des perturbations**")
+
+            if observations["cancelled_share"] is not None:
+                cancelled = f"{observations['cancelled_share']:.1%}".replace(".", ",")
+                late = f"{observations['late_share']:.1%}".replace(".", ",")
+                st.write(
+                    f"Sur la période sélectionnée, parmi les perturbations enregistrées, "
+                    f"{cancelled} correspondent à des annulations et {late} à des "
+                    "arrivées en retard."
+                )
+            else:
+                st.write("La répartition des perturbations n'est pas disponible.")
+
+    # Précisions méthodologiques sous les deux cadres
     if observations["n_valid_months"] < observations["n_months"]:
         st.caption("Les mois dont le taux est indisponible ne participent pas à la recherche du maximum.")
+
     if observations["n_months"] == 1:
         st.caption("Un seul mois est sélectionné : aucune évolution dans le temps ne peut être déduite.")
 
@@ -131,7 +165,9 @@ try:
         if services["service"].nunique() < 2:
             st.caption("Un seul service est présent : aucune comparaison entre services n'est possible.")
         st.plotly_chart(service_line(services), width="stretch")
-        st.caption("Les différences observées peuvent refléter des liaisons et durées différentes ; elles ne démontrent pas un effet causal du type de service.")
+        st.caption(
+            "Les différences observées peuvent refléter des liaisons et durées différentes ; elles ne démontrent pas un effet causal du type de service."
+        )
 
     st.subheader("Sévérité des retards")
     severity = delay_severity_over_time(data)
@@ -140,14 +176,19 @@ try:
         st.caption("Certaines données de retard sont incohérentes dans la source. Les résultats concernés ne sont pas affichés.")
     st.plotly_chart(severity_area(severity), width="stretch")
     st.caption(
-        "Parts rapportées aux circulations prévues enregistrées. Les seuils sont cumulatifs : ils ne s'additionnent pas. "
-        "Le champ > 15 min est documenté par la SNCF avec la réserve « si liaison concurrencée par vol » ; "
-        "son périmètre d'application reste à confirmer. Une coupure indique un résultat indisponible."
+        "Les proportions sont calculées par rapport au nombre de circulations prévues. "
+        "\t\n"
+        "Les seuils de retard (15, 30 et 60 minutes) sont cumulatifs et ne doivent pas être additionnés. "
+        "Pour le seuil de 15 minutes, la documentation SNCF précise la mention « si liaison concurrencée par vol ». "
+        "Les données correspondantes sont donc à interpréter en tenant compte de cette précision. "
+        "\t\n"
+        "Une interruption dans le graphique signale l'absence de données disponibles."
     )
 
     st.subheader("Répartition des causes de retard")
     st.caption(
         "Les six causes sont celles déclarées dans les données et concernent les retards, pas les annulations. "
+        "\n\n"
         "Hypothèse de calcul : pondération par le nombre de trains en retard à l'arrivée ; "
         "ce dénominateur n'est pas explicitement confirmé par les métadonnées SNCF. "
         "La part grise complète la répartition lorsqu'elle est incomplète : elle représente une part non ventilée, "
@@ -184,6 +225,8 @@ try:
         st.info("Aucune année complète dans la sélection : élargissez la période pour comparer les mois de l'année.")
     else:
         st.plotly_chart(seasonality_bar(seasonal), width="stretch")
-        st.caption(f"Chaque mois repose sur {int(seasonal['n_years'].min())} année(s) complète(s). Les taux ont des dénominateurs différents et ne s'additionnent pas.")
+        st.caption(
+            f"Chaque mois repose sur {int(seasonal['n_years'].min())} année(s) complète(s). Les taux ont des dénominateurs différents et ne s'additionnent pas."
+        )
 except RailInsightError as e:  # erreurs métier → message propre, pas de traceback
     st.error(f"Impossible d'afficher ces données : {e}")

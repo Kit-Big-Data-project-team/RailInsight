@@ -1,6 +1,6 @@
 """
 Description :
-Page Fiabilité des liaisons (tâche 5) : classement des liaisons les plus et les
+Page Fiabilité des liaisons: classement des liaisons les plus et les
 moins fiables, comparaison des services, et vue retards/annulations par liaison,
 avec un seuil minimal de trafic pour éviter les petits échantillons.
 """
@@ -46,11 +46,28 @@ non_fiables = top_unreliable(ds.df, n=10, min_scheduled=min_scheduled)
 
 k1, k2, k3 = st.columns(3)
 k1.metric("Liaisons analysées", int((route_reliability(ds.df)["scheduled"] >= min_scheduled).sum()))
-if not fiables.empty:
-    k2.metric("Plus fiable", fiables.iloc[0]["route"], f"{fiables.iloc[0]['reliability_score']:.1%}")
-if not non_fiables.empty:
-    k3.metric("Moins fiable", non_fiables.iloc[0]["route"], f"{non_fiables.iloc[0]['reliability_score']:.1%}")
 
+st.markdown(
+    """
+<style>
+.st-key-metric-fiable [data-testid="stMetricValue"],
+.st-key-metric-non-fiable [data-testid="stMetricValue"] {
+    font-size: 24px;
+}
+</style>
+""",
+    unsafe_allow_html=True,
+)
+
+if not fiables.empty:
+    with k2:
+        with st.container(key="metric-fiable"):
+            st.metric("Plus fiable", fiables.iloc[0]["route"], f"{fiables.iloc[0]['reliability_score']:.1%}")
+
+if not non_fiables.empty:
+    with k3:
+        with st.container(key="metric-non-fiable"):
+            st.metric("Moins fiable", non_fiables.iloc[0]["route"], f"{non_fiables.iloc[0]['reliability_score']:.1%}")
 col1, col2 = st.columns(2)
 with col1:
     st.subheader("Top 10 des plus fiables")
@@ -59,21 +76,40 @@ with col2:
     st.subheader("Top 10 des moins fiables")
     st.plotly_chart(reliability_bar(non_fiables, "Les moins fiables"), use_container_width=True)
 
-st.subheader("Retards vs annulations")
+st.subheader("Retards et annulations : quelles liaisons sont les plus touchées ?")
 st.plotly_chart(reliability_scatter(route_reliability(ds.df).query("scheduled >= @min_scheduled")), use_container_width=True)
-st.caption("Chaque bulle est une liaison (taille = trafic). En bas à gauche : les plus fiables.")
+st.caption(
+    "Chaque bulle représente une liaison TGV. Plus elle est grande, plus le trafic est important. "
+    "Les liaisons situées en bas à gauche cumulent moins de retards et d'annulations ; "
+    "celles en haut à droite sont les plus perturbées."
+)
 
-st.subheader("National vs International")
+st.subheader("La fiabilité varie-t-elle selon le type de service ?")
+st.caption("Comparez les performances des TGV nationaux et internationaux à travers leur score de fiabilité, leur taux de retard et leur taux d'annulation.")
 st.dataframe(
-    reliability_by_service(ds.df)[["service", "reliability_score", "late_rate", "cancellation_rate"]].style.format(
-        {"reliability_score": "{:.1%}", "late_rate": "{:.1%}", "cancellation_rate": "{:.1%}"}
+    reliability_by_service(ds.df)[["service", "reliability_score", "late_rate", "cancellation_rate"]]
+    .rename(
+        columns={
+            "service": "Type de service",
+            "reliability_score": "Score de fiabilité",
+            "late_rate": "Taux de retard",
+            "cancellation_rate": "Taux d'annulation",
+        }
+    )
+    .style.format(
+        {
+            "Score de fiabilité": "{:.1%}",
+            "Taux de retard": "{:.1%}",
+            "Taux d'annulation": "{:.1%}",
+        }
     ),
     use_container_width=True,
     hide_index=True,
 )
 
-st.subheader("Détail des classements")
-tab1, tab2 = st.tabs(["Plus fiables", "Moins fiables"])
+st.subheader("Quelles liaisons se démarquent ?")
+st.caption("Explorez les indicateurs des dix liaisons les mieux et les moins bien classées selon leur score de fiabilité.")
+tab1, tab2 = st.tabs(["Les 10 plus fiables", "Les 10 moins fiables"])
 with tab1:
     st.dataframe(
         fiables[COLS].rename(columns=COL_LABELS).style.format({"Fiabilité": "{:.1%}", "Taux de retard": "{:.1%}", "Taux d'annulation": "{:.1%}"}),
@@ -86,5 +122,3 @@ with tab2:
         use_container_width=True,
         hide_index=True,
     )
-
-st.caption("💡 Carte géographique des liaisons : optionnelle, à ajouter si on récupère les coordonnées des gares.")
