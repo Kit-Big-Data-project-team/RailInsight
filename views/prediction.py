@@ -3,11 +3,12 @@
 
 import pandas as pd
 import streamlit as st
-from railinsight.analysis.prediction_model import FEATURES, create_model
 from sklearn.metrics import mean_absolute_error
 
-from railinsight.analysis.prepare_prediction import prepare_prediction_data
 from railinsight.analysis.forecast import get_recent_rates
+from railinsight.analysis.prediction_model import FEATURES, create_model
+from railinsight.analysis.prepare_prediction import prepare_prediction_data
+
 
 
 
@@ -16,6 +17,24 @@ from railinsight.analysis.forecast import get_recent_rates
 
 @st.cache_data(show_spinner="Calcul des prédictions...")
 def load_predictions():
+
+    """Évalue le modèle et calcule les prévisions du mois suivant.
+
+    Entraîne une Random Forest sur les données antérieures à 2025
+    pour mesurer ses performances sur la période de test.
+
+    Réentraîne ensuite un modèle sur toutes les données disponibles
+    afin de prévoir le mois suivant, pour chaque liaison disposant
+    de trois mois récents consécutifs.
+
+    Returns:
+        tuple:
+            - test : données de test avec les prédictions historiques.
+            - forecasts : prévisions du prochain mois par liaison.
+            - mae_model : erreur absolue moyenne de la Random Forest.
+            - mae_baseline : erreur absolue moyenne de la référence.
+    """
+     
     df = prepare_prediction_data()
 
     # Évaluation historique : entraînement avant 2025.
@@ -54,7 +73,7 @@ def load_predictions():
         rates = get_recent_rates(group, latest_month)
 
         if rates is None:
-         continue
+            continue
         
         future_features = pd.DataFrame([{
             "late_rate_lag1": rates[-1],

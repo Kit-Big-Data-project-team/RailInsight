@@ -7,7 +7,16 @@ def get_recent_rates(
     df: pd.DataFrame,
     latest_month: pd.Period,
 ) -> list[float] | None:
-    """Retourne les trois derniers taux si les mois sont consécutifs."""
+    """Récupère les taux des trois mois précédant la prévision.
+
+    Args:
+        df: Historique mensuel d'une liaison et d'un service.
+        latest_month: Dernier mois observé dans le jeu de données.
+
+    Returns:
+        Liste des trois taux, du plus ancien au plus récent,
+        ou None si les mois attendus sont absents.
+    """
 
     recent = df.sort_values("date").tail(3)
 

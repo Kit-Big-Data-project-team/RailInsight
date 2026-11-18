@@ -12,7 +12,13 @@ FEATURES = [
 
 
 def create_model() -> RandomForestRegressor:
-    """Construit une Random Forest avec les paramètres du projet."""
+    """Crée le modèle Random Forest utilisé pour les prédictions.
+
+    Returns:
+        RandomForestRegressor configuré avec 100 arbres,
+        une profondeur maximale de 8 et une graine fixe
+        pour assurer la reproductibilité.
+    """
     return RandomForestRegressor(
         n_estimators=100,
         max_depth=8,

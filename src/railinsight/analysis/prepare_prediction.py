@@ -8,7 +8,20 @@ from railinsight.data.loader import TGVDataset
 
 
 def prepare_prediction_data() -> pd.DataFrame:
-    """Construit les taux de retard et leurs historiques mensuels."""
+    """Prépare les données mensuelles pour entraîner le modèle.
+
+    Charge les données TGV depuis PostgreSQL, calcule le taux
+    de retard par liaison et service, puis crée les taux des
+    trois mois précédents.
+
+    Écarte les observations sans trois mois consécutifs
+    disponibles et ajoute la moyenne historique ainsi que
+    le numéro du mois.
+
+    Returns:
+        DataFrame contenant les observations et les variables
+        nécessaires à l'entraînement du modèle.
+    """
 
     df = TGVDataset.from_db().df.copy()
     results = []

@@ -1,5 +1,5 @@
 
-"""Entraîne et évalue un modèle de prédiction des retards TGV."""
+"""Entraînement et évaluation du modèle de prédiction des retards TGV."""
 
 from railinsight.analysis.prediction_model import FEATURES, create_model
 from sklearn.metrics import mean_absolute_error
@@ -11,7 +11,16 @@ from railinsight.analysis.prepare_prediction import prepare_prediction_data
 
 
 def main() -> None:
-    """Compare une Random Forest à une prédiction de référence."""
+    """Entraîne et évalue la Random Forest sur les données TGV.
+
+    Utilise les observations antérieures à janvier 2025
+    pour l'entraînement et les observations suivantes
+    pour le test.
+
+    Compare l'erreur absolue moyenne du modèle à celle
+    d'une méthode de référence qui reprend le taux
+    observé le mois précédent.
+    """
 
     df = prepare_prediction_data()
 
