@@ -7,7 +7,9 @@ RailInsight est une application web interactive qui permet d'explorer les retard
 > - **Dépôt GitHub :** [Kit-Big-Data-project-team/RailInsight](https://github.com/Kit-Big-Data-project-team/RailInsight)
 > - **Application déployée :** [Ouvrir RailInsight](https://railinsight-3zgyn2awwmnsklkuivzmdc.streamlit.app/)
 > - **Documentation du jeu de données :** [Consulter la documentation](https://github.com/Kit-Big-Data-project-team/RailInsight/blob/main/docs/Documentation_du_jeu_de_données_Régularité_mensuelle_TGV.docx) 
-> - **Documentation technique avec Sphinx :** Lancer cette commande dans la racine du projet `start docs/build/html/index.html`
+> - **Documentation technique avec Sphinx :** Lancer ces deux commandes dans la racine du projet afin de générer la documentation Sphinx
+`python -m sphinx -E -b html docs docs/build/html`  
+`start docs/build/html/index.html`
 
 ## 1. Contexte et objectifs
 

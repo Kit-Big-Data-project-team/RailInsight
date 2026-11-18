@@ -13,6 +13,12 @@ def route_reliability(df: pd.DataFrame) -> pd.DataFrame:
 
     `reliability_score` = part des trains prévus qui ont circulé ET sont arrivés à
     l'heure = (prévus - annulés - en retard à l'arrivée) / prévus. Entre 0 et 1.
+    Le calcul repose sur l'indicateur de retard à l'arrivée fourni par les données SNCF.
+    Il ne repose pas sur les seuils fixes de 15, 30 ou 60 minutes, qui sont utilisés séparément
+    dans l'analyse de la sévérité des retards.
+
+    Le score est exprimé en pourcentage : plus il est élevé, plus la liaison présente une bonne régularité
+    sur la période étudiée.
     """
     g = df.groupby("route")[["scheduled", "cancelled", "late_arrival"]].sum().reset_index()
 

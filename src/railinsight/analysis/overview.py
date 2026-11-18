@@ -228,12 +228,18 @@ def overview_highlights(df: pd.DataFrame) -> dict:
         }
 
     causes = overall_cause_distribution(df)
-    if not causes.empty:
+
+    if not causes.empty and causes["share"].fillna(0).sum() > 0:
         dominant = causes.iloc[0]
         default["dominant_cause"] = {
             "title": "Cause la plus représentée",
-            "text": (f"{dominant['cause']} arrive en tête avec une part pondérée de {dominant['share']:.1f} % des causes de retard."),
+            "text": (f"{dominant['cause']} arrive en tête avec une part pondérée " f"de {dominant['share']:.1f} % des causes de retard."),
             "status": "neutral",
         }
-
+    else:
+        default["dominant_cause"] = {
+            "title": "Causes des retards",
+            "text": "Répartition indisponible pour cette période.",
+            "status": "neutral",
+        }
     return default
