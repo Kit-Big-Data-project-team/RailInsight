@@ -34,12 +34,14 @@ L'application est organisée en quatre pages accessibles depuis la navigation St
 
 | Page | Contenu |
 |---|---|
-| **Vue d'ensemble** | Présente une synthèse de la ponctualité du réseau TGV : nombre de liaisons suivies, volume total de circulations prévues, taux de retard et d'annulation du dernier mois disponible. La page propose également une évolution mensuelle des retards et des annulations, trois observations clés sur la tendance récente, le mois le plus perturbé et la principale cause de retard, ainsi qu'une répartition des causes et une visualisation de la saisonnalité. |
+| **Vue d'ensemble** | Présente une synthèse de la ponctualité des liaisons TGV du jeu de données : nombre de liaisons suivies, volume total de circulations prévues, taux de retard et d'annulation du dernier mois disponible. La page propose également une évolution mensuelle des retards et des annulations, trois observations clés sur la tendance récente, le mois au taux de retard le plus élevé et la principale cause de retard, ainsi qu'une répartition des causes et une visualisation de la saisonnalité. |
 | **Historique & évolution** | Permet d'analyser les retards et les annulations sur l'ensemble des liaisons ou sur une liaison sélectionnée, avec un filtre temporel. La page présente les taux de retard, d'annulation et de perturbation, leur évolution mensuelle, les périodes les plus perturbées, une comparaison entre services nationaux et internationaux, la sévérité des retards (15, 30 et 60 minutes), l'évolution des causes déclarées et une comparaison par mois de l'année. |
 | **Fiabilité des liaisons** | Classe les dix liaisons les plus fiables et les dix moins fiables selon leur score de fiabilité, avec un seuil minimal de trafic configurable. La page permet également de visualiser les taux de retard et d'annulation par liaison en tenant compte du volume de circulation, de comparer les services nationaux et internationaux et de consulter les tableaux détaillés des classements. |
 | **Mon trajet** | Permet de sélectionner une liaison et une période pour consulter ses indicateurs historiques : taux d'annulation, taux de retard, taux de perturbation et retard moyen à l'arrivée. La page présente également la répartition des issues sur une base de 100 circulations prévues, compare les douze derniers mois aux douze mois précédents lorsque les données le permettent, compare les deux sens de circulation et affiche les causes déclarées des retards. |
 
 Les graphiques sont réalisés avec **Plotly**. Les pages chargent les données depuis PostgreSQL et utilisent une couche commune de préparation afin de conserver les mêmes noms de colonnes et les mêmes définitions d'indicateurs d'une page à l'autre.
+
+> **Périmètre des indicateurs.** Le jeu SNCF (AQST) décrit la régularité **par liaison** : un même train peut être comptabilisé dans plusieurs liaisons. Les agrégats présentés dans l'application portent donc sur les observations des liaisons du jeu de données ; ils ne représentent pas la régularité nationale officielle des TGV et ne doivent pas être additionnés pour en déduire un taux « réseau » global. [Voir la précision de la SNCF](https://ressources.data.sncf.com/explore/dataset/regularite-mensuelle-tgv-aqst/information/).
 
 ## 3. Données utilisées
 
@@ -129,6 +131,8 @@ Le pipeline commence dans `src/railinsight/main.py`, qui initialise la base de d
 
 Les données sont récupérées depuis l'API SNCF, nettoyées et préparées dans `src/railinsight/data/`, puis stockées dans PostgreSQL, dans la table `regularite_tgv`. Le module `loader.py` fournit la classe `TGVDataset`, qui charge et harmonise les données pour les différentes pages de l'application.
 
+Le chargement est **idempotent** : à chaque exécution, l'ETL réinterroge l'API sur les derniers mois déjà présents (fenêtre de reprise) et applique un `INSERT ... ON CONFLICT DO UPDATE` sur la clé `(date, service, gare_depart, gare_arrivee)`. Relancer le pipeline ne crée donc pas de doublon, et une éventuelle rectification publiée par la SNCF sur un mois récent remplace l'ancienne valeur.
+
 Les données sont ensuite exploitées par deux couches :
 - **`analysis/`** : calcule les indicateurs, agrégations, classements et comparaisons.
 - **`viz/`** : construit les graphiques Plotly. Le module `theme.py` centralise les couleurs et le thème graphique commun.
@@ -154,7 +158,7 @@ RailInsight/
 │
 ├── docs/
 │   ├── DEPLOYMENT.md           # Instructions de déploiement
-│   └── documentation_dataset.docx
+│   └── Documentation_du_jeu_de_données_Régularité_mensuelle_TGV.docx
 │                               # Documentation du jeu de données
 │
 ├── logs/                       # Fichiers de journalisation
@@ -274,8 +278,8 @@ Au premier démarrage, Docker effectue les opérations suivantes :
 1. construit l'image de l'application à partir du `Dockerfile` ;
 2. démarre le conteneur PostgreSQL ;
 3. attend que la base soit disponible grâce au healthcheck ;
-4. lance le script d'initialisation et le pipeline ETL ;
-5. crée la table si nécessaire, récupère les données SNCF, les nettoie et les insère dans PostgreSQL ;
+4. initialise la base (étape **bloquante** : si la base est inaccessible ou le schéma incompatible, le démarrage s'arrête avec une erreur explicite plutôt que de lancer une application vide) ;
+5. lance le pipeline ETL : récupère les données SNCF, les nettoie et les insère ou met à jour dans PostgreSQL (UPSERT idempotent) ;
 6. démarre le serveur Streamlit.
 
 L'application est ensuite accessible à l'adresse suivante :
@@ -328,7 +332,7 @@ Relancer manuellement l'initialisation et le pipeline depuis le conteneur applic
 docker compose exec app uv run --no-sync python src/railinsight/main.py
 ```
 
-Si l'API SNCF est temporairement indisponible, le script de démarrage laisse tout de même Streamlit se lancer. En revanche, si la base est encore vide, les pages ne disposeront pas des données nécessaires pour afficher les analyses. Il faut alors consulter les logs et relancer le pipeline lorsque l'API est de nouveau accessible.
+Si l'API SNCF est temporairement indisponible, seule l'étape ETL est ignorée : Streamlit se lance tout de même avec les données déjà présentes en base. En revanche, une erreur d'**initialisation de la base** (base inaccessible ou schéma incompatible) est bloquante et arrête le démarrage, afin de ne pas présenter une application sans données en la faisant passer pour fonctionnelle. Si la base est encore vide, il faut consulter les logs et relancer le pipeline lorsque l'API est de nouveau accessible.
 
 ## 8. Variante : lancer Streamlit sur la machine hôte
 
