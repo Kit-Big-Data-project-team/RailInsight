@@ -6,6 +6,21 @@ from railinsight.analysis.metrics import monthly_late_rate
 from railinsight.data.loader import TGVDataset
 
 
+def get_monthly_prediction_data() -> pd.DataFrame:
+    """Récupère les taux mensuels sans supprimer les premiers mois."""
+
+    df = TGVDataset.from_db().df.copy()
+    results = []
+
+    for (liaison, service), group in df.groupby(["liaison", "service"]):
+        monthly = monthly_late_rate(group)
+        monthly["liaison"] = liaison
+        monthly["service"] = service
+        results.append(monthly)
+
+    return pd.concat(results, ignore_index=True).sort_values(["liaison", "service", "date"]).reset_index(drop=True)
+
+
 def prepare_prediction_data() -> pd.DataFrame:
     """Prépare les données mensuelles pour entraîner le modèle.
 
@@ -22,17 +37,7 @@ def prepare_prediction_data() -> pd.DataFrame:
         nécessaires à l'entraînement du modèle.
     """
 
-    df = TGVDataset.from_db().df.copy()
-    results = []
-
-    # Réutilisation de la fonction commune de calcul des taux.
-    for (liaison, service), group in df.groupby(["liaison", "service"]):
-        monthly = monthly_late_rate(group)
-        monthly["liaison"] = liaison
-        monthly["service"] = service
-        results.append(monthly)
-
-    prediction_data = pd.concat(results, ignore_index=True).sort_values(["liaison", "service", "date"]).reset_index(drop=True)
+    prediction_data = get_monthly_prediction_data()
 
     group = prediction_data.groupby(["liaison", "service"])["late_rate"]
 
@@ -60,6 +65,7 @@ def prepare_prediction_data() -> pd.DataFrame:
     ]
 
     prediction_data = prediction_data.dropna(subset=lag_columns).copy()
+    prediction_data = prediction_data.dropna(subset=["late_rate"]).copy()
 
     prediction_data["late_rate_mean3"] = prediction_data[lag_columns].mean(axis=1)
 

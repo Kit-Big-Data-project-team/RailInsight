@@ -31,4 +31,7 @@ def get_recent_rates(
     if actual != expected:
         return None
 
+    if recent["late_rate"].isna().any():
+        return None
+
     return recent["late_rate"].astype(float).tolist()
