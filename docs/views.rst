@@ -36,3 +36,13 @@ taux d'annulation, taux de retard, taux de perturbation et retard moyen à l'arr
 La page présente également la répartition des issues sur une base de 100 circulations prévues, 
 compare les douze derniers mois aux douze mois précédents lorsque les données le permettent, 
 compare les deux sens de circulation et affiche les causes déclarées des retards.
+
+Prédiction des retards
+----------------------
+
+Permet de sélectionner une liaison TGV et un service pour prévoir le taux de retard du mois suivant à l'aide d'un modèle Random Forest.
+La prévision s'appuie sur les taux de retard des trois derniers mois observés. 
+La page affiche une carte interactive des gares de départ et d'arrivée, reliées par un tracé indicatif, ainsi que 
+l'évolution historique des retards.
+Elle présente également une évaluation du modèle sur des données historiques, avec une comparaison à une méthode de référence basée sur 
+le taux de retard du mois précédent.
