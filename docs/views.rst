@@ -6,11 +6,17 @@ Cette section présente les différentes pages de l'application RailInsight.
 Vue d'ensemble
 --------------
 
-Présente une synthèse de la ponctualité du réseau TGV : nombre de liaisons suivies, 
-volume total de circulations prévues, taux de retard et d'annulation du dernier mois disponible. 
-La page propose également une évolution mensuelle des retards et des annulations, 
-trois observations clés sur la tendance récente, le mois le plus perturbé et la principale cause de retard, 
+Présente une synthèse de la ponctualité des liaisons TGV du jeu de données : nombre de liaisons suivies,
+volume total de circulations prévues, taux de retard et d'annulation du dernier mois disponible.
+La page propose également une évolution mensuelle des retards et des annulations,
+trois observations clés sur la tendance récente, le mois au taux de retard le plus élevé et la principale cause de retard,
 ainsi qu'une répartition des causes et une visualisation de la saisonnalité.
+
+.. note::
+
+   Le jeu SNCF (AQST) décrit la régularité **par liaison** : un même train peut être comptabilisé
+   dans plusieurs liaisons. Les agrégats de cette page portent sur les observations des liaisons du
+   jeu de données ; ils ne représentent pas la régularité nationale officielle des TGV.
 
 Historique
 ----------

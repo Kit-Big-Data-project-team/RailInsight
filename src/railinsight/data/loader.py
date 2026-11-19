@@ -127,8 +127,11 @@ class TGVDataset:
         """Retourne la liste triée de toutes les liaisons (routes) disponibles dans le dataset.
 
         Returns:
-            list[str]: Liste des routes uniques.
+            list[str]: Liste des routes uniques, ou liste vide si la base est
+                vide (``from_db`` renvoie alors un DataFrame sans colonne ``route``).
         """
+        if self.df.empty or "route" not in self.df.columns:
+            return []
         return sorted(self.df["route"].unique())
 
     def for_route(self, route: str) -> pd.DataFrame:

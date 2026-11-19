@@ -48,12 +48,25 @@ def test_rows_are_stored_with_expected_values(db_engine, fake_api):
     assert "commentaire_annulation" not in row
 
 
-def test_second_run_asks_only_for_newer_months(db_engine, fake_api, sample_records):
+def test_second_run_reasks_the_resync_window(db_engine, fake_api, sample_records):
+    """2e passage : on réinterroge la fenêtre de reprise (derniers mois) pour rattraper
+    d'éventuelles rectifications, au lieu de ne demander que les mois strictement postérieurs."""
     fake_api.side_effect = [make_response(sample_records), make_response([])]
 
     pipeline(db_engine)
     pipeline(db_engine)
-    assert fake_api.call_args_list[1].kwargs["params"] == {"where": 'date > "2026-09-01"'}
+    # Dernier mois chargé = 2026-09 ; fenêtre de reprise de 2 mois => borne inclusive 2026-07-01.
+    assert fake_api.call_args_list[1].kwargs["params"] == {"where": 'date >= "2026-07-01"'}
+    assert len(read_rows(db_engine)) == len(sample_records)
+
+
+def test_rerunning_same_data_is_idempotent(db_engine, fake_api, sample_records):
+    """Réimporter exactement les mêmes données ne crée pas de doublon (UPSERT)."""
+    fake_api.side_effect = [make_response(sample_records), make_response(sample_records)]
+
+    pipeline(db_engine)
+    pipeline(db_engine)
+
     assert len(read_rows(db_engine)) == len(sample_records)
 
 

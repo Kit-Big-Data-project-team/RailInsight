@@ -50,3 +50,35 @@ def test_reliability_by_service_aggregates_per_service():
     assert out.loc["National", "reliability_score"] == 100 / 105
     # International = B (100, 10 annulés, 40 retards) -> (100 - 10 - 40) / 100
     assert out.loc["International", "reliability_score"] == 0.50
+
+
+def test_reliability_flags_impossible_counts_as_null():
+    """Effectifs incohérents (annulés > prévus) -> score NULL, pas une valeur négative (RI-008)."""
+    df = pd.DataFrame(
+        {
+            "route": ["A", "B"],
+            "scheduled": [100, 100],
+            "cancelled": [0, 120],  # B : plus d'annulés que de prévus => impossible
+            "late_arrival": [5, 5],
+        }
+    )
+    out = route_reliability(df).set_index("route")
+
+    assert out.loc["A", "reliability_score"] == 0.95
+    assert pd.isna(out.loc["B", "reliability_score"])
+
+
+def test_ranking_excludes_invalid_routes():
+    """Une liaison au score invalide n'apparaît pas dans le classement (RI-008)."""
+    df = pd.DataFrame(
+        {
+            "route": ["A", "B"],
+            "scheduled": [100, 100],
+            "cancelled": [0, 120],
+            "late_arrival": [5, 5],
+        }
+    )
+    out = top_unreliable(df, n=10, min_scheduled=0)
+
+    assert "B" not in out["route"].values
+    assert "A" in out["route"].values

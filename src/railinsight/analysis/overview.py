@@ -30,7 +30,12 @@ MONTHS_FR = (
 
 
 def global_kpis(df: pd.DataFrame) -> dict:
-    """Indicateurs cumulés sur l'ensemble du réseau et de la période couverte."""
+    """Indicateurs cumulés sur l'ensemble des liaisons du jeu de données et de la période.
+
+    Note : il s'agit d'agrégats d'observations **par liaison** (source SNCF AQST), pas
+    de la régularité nationale officielle des TGV. Un même train peut être compté dans
+    plusieurs liaisons ; ces cumuls ne doivent pas être lus comme un taux « réseau ».
+    """
     scheduled = int(df["scheduled"].sum())
     cancelled = int(df["cancelled"].sum())
     late = int(df["late_arrival"].sum())
@@ -162,7 +167,7 @@ def overview_highlights(df: pd.DataFrame) -> dict:
             "status": "neutral",
         },
         "worst_month": {
-            "title": "Mois le plus perturbé",
+            "title": "Mois au taux de retard le plus élevé",
             "text": "Aucun taux mensuel exploitable n'est disponible.",
             "status": "neutral",
         },
@@ -219,7 +224,7 @@ def overview_highlights(df: pd.DataFrame) -> dict:
         effective = worst["scheduled"] - worst["cancelled"]
         effective_label = f"{effective:,.0f}".replace(",", " ")
         default["worst_month"] = {
-            "title": "Mois le plus perturbé",
+            "title": "Mois au taux de retard le plus élevé",
             "text": (
                 f"{format_month_fr(worst['date'])} présente le taux de retard mensuel le plus élevé "
                 f"({worst['late_rate']:.1%}), pour {effective_label} circulations effectives."

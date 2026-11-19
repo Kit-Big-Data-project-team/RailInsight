@@ -1,7 +1,5 @@
 import pandas as pd
-import pytest
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError
 from utils import make_record
 
 from railinsight.data.data_cleaning import nettoyer_donnees
@@ -42,11 +40,22 @@ def test_null_values_are_stored_as_null(db_engine):
     assert read_rows(db_engine)[0]["retard_moyen_depart"] is None
 
 
-def test_duplicate_key_is_rejected_and_transaction_rolled_back(db_engine):
-    insert_data(nettoyer_donnees([make_record()]), db_engine)
-    batch = nettoyer_donnees([make_record(gare_depart="VANNES"), make_record()])  # 2e = doublon
+def test_existing_key_is_updated_not_rejected(db_engine):
+    """Une clé déjà présente est mise à jour (UPSERT), sans rejeter le reste du lot."""
+    insert_data(nettoyer_donnees([make_record(nb_train_prevu=100)]), db_engine)
+    batch = nettoyer_donnees([make_record(gare_depart="VANNES"), make_record(nb_train_prevu=999)])
+    insert_data(batch, db_engine)
 
-    with pytest.raises(IntegrityError):
-        insert_data(batch, db_engine)
+    rows = {r["gare_depart"]: r for r in read_rows(db_engine)}
+    assert set(rows) == {"LE MANS", "VANNES"}  # VANNES inséré, LE MANS mis à jour
+    assert rows["LE MANS"]["nb_train_prevu"] == 999
 
-    assert len(read_rows(db_engine)) == 1  # VANNES n'a pas été inséré non plus
+
+def test_duplicate_within_batch_keeps_last_version(db_engine):
+    """Deux lignes de même clé dans un lot : la dernière version est conservée (RI-010)."""
+    batch = nettoyer_donnees([make_record(nb_train_prevu=1), make_record(nb_train_prevu=2)])
+    insert_data(batch, db_engine)
+
+    rows = read_rows(db_engine)
+    assert len(rows) == 1
+    assert rows[0]["nb_train_prevu"] == 2
