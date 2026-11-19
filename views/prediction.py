@@ -7,7 +7,7 @@ from sklearn.metrics import mean_absolute_error
 
 from railinsight.analysis.forecast import get_recent_rates
 from railinsight.analysis.prediction_model import FEATURES, create_model
-from railinsight.analysis.prepare_prediction import get_monthly_prediction_data, prepare_prediction_data
+from railinsight.analysis.prepare_prediction import prepare_prediction_data
 from railinsight.viz.station_map import get_station_coordinates
 
 
@@ -30,7 +30,6 @@ def load_predictions():
             - mae_baseline : erreur absolue moyenne de la référence.
     """
     df = prepare_prediction_data()
-    monthly_df = get_monthly_prediction_data()
 
     # Évaluation historique : entraînement avant 2025.
     train = df[df["date"] < "2025-01-01"]
@@ -49,12 +48,12 @@ def load_predictions():
     future_model = create_model()
     future_model.fit(df[FEATURES], df["late_rate"])
 
-    latest_month = monthly_df["date"].max().to_period("M")
+    latest_month = df["date"].max().to_period("M")
     next_month = latest_month + 1
 
     forecasts = []
 
-    for (liaison, service), group in monthly_df.groupby(["liaison", "service"]):
+    for (liaison, service), group in df.groupby(["liaison", "service"]):
         group = group.sort_values("date")
 
         rates = get_recent_rates(group, latest_month)
@@ -181,24 +180,10 @@ else:
                 get_width_units="pixels",
             )
 
-            # Adapter le zoom à la distance entre les deux gares.
-            lat_diff = abs(start_coords[0] - end_coords[0])
-            lon_diff = abs(start_coords[1] - end_coords[1])
-            max_diff = max(lat_diff, lon_diff)
-
-            if max_diff > 5:
-                zoom = 5
-            elif max_diff > 2:
-                zoom = 6
-            elif max_diff > 1:
-                zoom = 7
-            else:
-                zoom = 8
-
             view_state = pdk.ViewState(
                 latitude=(start_coords[0] + end_coords[0]) / 2,
                 longitude=(start_coords[1] + end_coords[1]) / 2,
-                zoom=zoom,
+                zoom=7,
             )
 
             st.pydeck_chart(
