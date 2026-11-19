@@ -19,18 +19,19 @@ La question qui guide ce travail est la suivante :
 
 **Les retards des TGV sont-ils des incidents isolés ou révèlent-ils des difficultés récurrentes ? Où, quand et pour quelles raisons surviennent-ils ?**
 
-Pour apporter des éléments de réponse, l'application propose quatre angles de lecture :
+Pour apporter des éléments de réponse, l'application propose cinq angles de lecture :
 
 1. **Comprendre la situation d'ensemble** grâce à des indicateurs clés et à une présentation des différentes pages.
 2. **Suivre les évolutions** des retards et des annulations au fil des mois, en observant notamment les causes déclarées et la saisonnalité.
 3. **Comparer les liaisons** à l'aide d'un classement des plus fiables et des moins fiables.
 4. **Examiner un trajet précis** en sélectionnant une liaison entre une gare de départ et une gare d'arrivée.
+5. **Anticiper les retards mensuels** en prévoyant le taux de retard d'une liaison TGV pour le mois suivant à partir des données historiques.
 
 Le projet couvre également toute la chaîne technique : récupération des données par API et mise à jour automatique de ces derniéres, préparation et nettoyage avec Python, stockage dans PostgreSQL, puis restitution dans une application Streamlit.
 
 ## 2. L'application
 
-L'application est organisée en quatre pages accessibles depuis la navigation Streamlit.
+L'application est organisée en cinq pages accessibles depuis la navigation Streamlit.
 
 | Page | Contenu |
 |---|---|
@@ -38,9 +39,9 @@ L'application est organisée en quatre pages accessibles depuis la navigation St
 | **Historique & évolution** | Permet d'analyser les retards et les annulations sur l'ensemble des liaisons ou sur une liaison sélectionnée, avec un filtre temporel. La page présente les taux de retard, d'annulation et de perturbation, leur évolution mensuelle, les périodes les plus perturbées, une comparaison entre services nationaux et internationaux, la sévérité des retards (15, 30 et 60 minutes), l'évolution des causes déclarées et une comparaison par mois de l'année. |
 | **Fiabilité des liaisons** | Classe les dix liaisons les plus fiables et les dix moins fiables selon leur score de fiabilité, avec un seuil minimal de trafic configurable. La page permet également de visualiser les taux de retard et d'annulation par liaison en tenant compte du volume de circulation, de comparer les services nationaux et internationaux et de consulter les tableaux détaillés des classements. |
 | **Mon trajet** | Permet de sélectionner une liaison et une période pour consulter ses indicateurs historiques : taux d'annulation, taux de retard, taux de perturbation et retard moyen à l'arrivée. La page présente également la répartition des issues sur une base de 100 circulations prévues, compare les douze derniers mois aux douze mois précédents lorsque les données le permettent, compare les deux sens de circulation et affiche les causes déclarées des retards. |
+| **Prédiction des retards** | Permet de prévoir automatiquement le taux de retard du mois n+1, où n correspond au dernier mois disponible dans les données SNCF, à partir des trois derniers mois observés. La page utilise un modèle Random Forest et présente une carte interactive des liaisons TGV, les prévisions, l'évolution historique des retards et une comparaison des performances du modèle avec une méthode de référence. |
 
-Les graphiques sont réalisés avec **Plotly**. Les pages chargent les données depuis PostgreSQL et utilisent une couche commune de préparation afin de conserver les mêmes noms de colonnes et les mêmes définitions d'indicateurs d'une page à l'autre.
-
+Les visualisations sont réalisées avec **Plotly**, **Streamlit** et **PyDeck**. Les pages chargent les données depuis PostgreSQL et utilisent une couche commune de préparation afin de conserver les mêmes noms de colonnes et les mêmes définitions d'indicateurs d'une page à l'autre.
 ## 3. Données utilisées
 
 ### Source
@@ -123,6 +124,7 @@ RailInsight repose sur une architecture organisée en plusieurs couches : collec
                     v
        Vue d'ensemble | Historique
        Fiabilité      | Mon trajet
+       Prédiction des retards
 ```
 
 Le pipeline commence dans `src/railinsight/main.py`, qui initialise la base de données et lance le processus ETL.
@@ -131,9 +133,9 @@ Les données sont récupérées depuis l'API SNCF, nettoyées et préparées dan
 
 Les données sont ensuite exploitées par deux couches :
 - **`analysis/`** : calcule les indicateurs, agrégations, classements et comparaisons.
-- **`viz/`** : construit les graphiques Plotly. Le module `theme.py` centralise les couleurs et le thème graphique commun.
+- **`viz/`** : regroupe les fonctions de visualisation, notamment les graphiques Plotly et la carte interactive PyDeck. Le module `theme.py` centralise les couleurs et le thème graphique commun.
 
-Enfin, le dossier `views/` regroupe les quatre pages Streamlit, qui utilisent ces couches pour présenter les résultats.
+Enfin, le dossier `views/` regroupe les cinq pages Streamlit, qui utilisent ces couches pour présenter les résultats.
 
 Cette architecture sépare la collecte, le stockage, l'analyse et la visualisation, tout en favorisant la réutilisation du code.
 
@@ -154,7 +156,7 @@ RailInsight/
 │
 ├── docs/
 │   ├── DEPLOYMENT.md           # Instructions de déploiement
-│   └── documentation_dataset.docx
+│   └── Documentation_du_jeu_de_données_Régularité_mensuelle_TGV.docx
 │                               # Documentation du jeu de données
 │
 ├── logs/                       # Fichiers de journalisation
@@ -180,7 +182,8 @@ RailInsight/
 │   ├── overview.py             # Vue d'ensemble
 │   ├── history.py              # Historique et évolution
 │   ├── reliability.py          # Fiabilité des liaisons
-│   └── trip.py                 # Analyse d'une liaison
+│   ├── trip.py                 # Analyse d'une liaison
+│   └── prediction.py           # Prédiction des retards et carte interactive
 │
 ├── .dockerignore               # Fichiers exclus de la construction Docker
 ├── .env.example                # Exemple de variables d'environnement
@@ -201,7 +204,7 @@ RailInsight/
 | Gestion de l'environnement et des dépendances | `uv` |
 | Application web | Streamlit |
 | Manipulation des données | Pandas |
-| Graphiques | Plotly |
+| Graphiques | Plotly et graphiques natifs Streamlit |
 | Appels à l'API | Requests |
 | Accès à la base | SQLAlchemy et `psycopg2-binary` |
 | Base de données | PostgreSQL 17 (image Docker `postgres:17-alpine`) |
@@ -211,6 +214,8 @@ RailInsight/
 | Documentation technique | Sphinx |
 | Conteneurisation | Docker et Docker Compose |
 | Intégration continue | GitHub Actions |
+| Machine learning et prédiction | Scikit-learn (Random Forest Regressor) |
+| Cartographie interactive | PyDeck (fonds cartographiques OpenStreetMap / CARTO) |
 
 ## 7. Lancer RailInsight en local avec Docker
 
