@@ -48,5 +48,7 @@ pages = [
     st.Page("views/history.py", title="Historique & évolution"),
     st.Page("views/reliability.py", title="Fiabilité des liaisons"),
     st.Page("views/trip.py", title="Mon trajet"),
+    st.Page("views/prediction.py", title="Prédiction des retards"),
+    st.Page("views/prediction_reliability.py", title="Fiabilité de la prévision"),
 ]
 st.navigation(pages).run()
