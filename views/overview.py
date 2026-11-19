@@ -1,4 +1,4 @@
-"""Page d'accueil : synthèse de la ponctualité du réseau TGV."""
+"""Page d'accueil : synthèse de la ponctualité des liaisons TGV du jeu de données."""
 
 import streamlit as st
 
@@ -24,7 +24,7 @@ st.title("La ponctualité des TGV en un coup d'œil")
 st.markdown("""
 Derrière chaque retard, chaque annulation et chaque trajet perturbé se cache une histoire.
 RailInsight explore les données ouvertes de SNCF Voyageurs pour décrypter la ponctualité
-du réseau TGV et répondre à une question essentielle : les retards sont-ils de simples
+des liaisons TGV et répondre à une question essentielle : les retards sont-ils de simples
 incidents ou révèlent-ils des problèmes plus profonds ?
 
 Commencez par découvrir le réseau dans son ensemble, puis remontez le fil des perturbations :
@@ -43,7 +43,7 @@ kpis = global_kpis(df)
 latest = latest_month_kpis(df)
 latest_label = format_month_fr(latest["date"])
 
-st.subheader("Le réseau en chiffres")
+st.subheader("Les liaisons du jeu de données en chiffres")
 c1, c2, c3, c4 = st.columns(4)
 c1.metric(
     "Liaisons suivies",
@@ -75,9 +75,17 @@ if kpis["date_min"] is not None:
         f"Période couverte : {kpis['date_min']:%m/%Y} – {kpis['date_max']:%m/%Y}. Les deux taux de retard affichés correspondent au dernier mois disponible."
     )
 
+st.info(
+    "**Périmètre des indicateurs.** Ces chiffres agrègent les observations mensuelles "
+    "**par liaison** du jeu SNCF (AQST). Un même train peut être compté dans plusieurs "
+    "liaisons : ils ne représentent donc **pas** la régularité nationale officielle des TGV, "
+    "et ne doivent pas être additionnés pour en déduire un taux « réseau » global.",
+    icon="ℹ️",
+)
+
 st.divider()
 st.subheader("Comment évoluent les retards et les annulations ?")
-st.caption("Suivez mois après mois l'évolution des perturbations et repérez les périodes où la régularité du réseau s'améliore ou se dégrade.")
+st.caption("Suivez mois après mois l'évolution des perturbations et repérez les périodes où la régularité des liaisons s'améliore ou se dégrade.")
 monthly = monthly_network_rates(df)
 st.plotly_chart(
     network_trend_line(monthly),
