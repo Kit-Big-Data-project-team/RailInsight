@@ -39,6 +39,10 @@ st.write(
 )
 
 ds = load()
+if ds.df.empty:
+    st.warning("Aucune donnée n'est disponible dans la base pour le moment.")
+    st.stop()
+
 min_scheduled = st.sidebar.slider("Trafic minimum (trains prévus)", min_value=0, max_value=5000, value=500, step=100)
 
 fiables = top_reliable(ds.df, n=10, min_scheduled=min_scheduled)

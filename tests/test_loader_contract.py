@@ -70,3 +70,16 @@ def test_from_db_exposes_the_full_data_contract():
     assert EXPECTED_COLUMNS.issubset(set(ds.df.columns))
     assert ds.df["route"].iloc[0] == "PARIS → LYON"
     assert sorted(ds.routes()) == ["LYON → PARIS", "PARIS → LYON"]
+
+
+def test_routes_empty_database_returns_empty_list():
+    """Base vide : from_db ne construit pas la colonne route ; routes() ne doit pas planter (RI-011)."""
+    empty = pd.DataFrame()
+    with (
+        patch("railinsight.data.loader.make_engine", return_value=MagicMock()),
+        patch("railinsight.data.loader.pd.read_sql", return_value=empty),
+    ):
+        ds = loader.TGVDataset.from_db()
+
+    assert ds.df.empty
+    assert ds.routes() == []
