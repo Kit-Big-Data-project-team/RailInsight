@@ -3,7 +3,7 @@
 import pandas as pd
 
 from railinsight.analysis.backtest import backtest_summary, walk_forward_backtest
-from tests.test_forecast_intervals import prepared
+from test_forecast_intervals import prepared
 
 
 def test_walk_forward_backtest_shape_and_counts():
