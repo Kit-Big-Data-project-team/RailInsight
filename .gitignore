@@ -10,8 +10,11 @@ __pycache__/
 !.env.example
 # Secrets Streamlit (le vrai fichier ne doit pas être versionné)
 .streamlit/secrets.toml
-# Build de la documentation Sphinx
+# Build de la documentation Sphinx (générée, non versionnée)
 docs/_build/
+docs/build/
+# Logs d'exécution (générés au runtime, non versionnés)
+logs/
 .DS_Store
 Thumbs.db
 .ruff_cache/
