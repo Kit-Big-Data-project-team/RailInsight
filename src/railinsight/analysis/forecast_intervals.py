@@ -8,6 +8,7 @@ Construit au-dessus de la préparation des données commune (`prepare_prediction
 et des mêmes variables que le modèle ponctuel (`prediction_model.FEATURES`).
 """
 
+import numpy as np
 import pandas as pd
 from sklearn.ensemble import GradientBoostingRegressor
 
@@ -60,8 +61,7 @@ def predict_with_interval(models: dict[str, GradientBoostingRegressor], features
         Tableau avec les colonnes low, median et high, aligné sur l'index d'entrée.
     """
     predictions = pd.DataFrame({name: model.predict(features[FEATURES]).clip(0, 1) for name, model in models.items()}, index=features.index)
-    ordered = predictions[BOUND_COLUMNS].to_numpy()
-    ordered.sort(axis=1)
+    ordered = np.sort(predictions[BOUND_COLUMNS].to_numpy(), axis=1)
     return pd.DataFrame(ordered, columns=BOUND_COLUMNS, index=features.index)
 
 
