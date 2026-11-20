@@ -13,6 +13,12 @@ CAUSE_COLUMNS = {
     "cause_passengers": "Prise en charge des voyageurs",
 }
 
+# Part non ventilée : complément à 100 des six causes déclarées. Même logique que la
+# page Historique, pour que les deux pages présentent une répartition cohérente.
+# Le libellé correspond à la couleur grise neutre du thème (viz.theme.CAUSE_COLORS).
+UNALLOCATED_LABEL = "Part non ventilée dans les données"
+CAUSE_TOTAL_TOLERANCE = 0.1
+
 MONTHS_FR = (
     "janv.",
     "févr.",
@@ -109,11 +115,13 @@ def latest_month_kpis(df: pd.DataFrame) -> dict:
 
 
 def overall_cause_distribution(df: pd.DataFrame) -> pd.DataFrame:
-    """Agrège les six causes en pondérant leur part par le nombre de retards.
+    """Agrège les six causes et leur part non ventilée, pondérées par le nombre de retards.
 
     Les colonnes de causes sont exprimées en pourcentage dans le dataset SNCF.
     Une ligne associée à davantage de trains en retard pèse donc davantage dans
-    le résultat global.
+    le résultat global. La part non ventilée est le complément à 100 des six causes
+    déclarées (calculé par enregistrement, jamais renormalisé) : elle représente une
+    information manquante, pas une cause identifiée. Même convention que la page Historique.
     """
     columns = ["cause", "share"]
     required = {"late_arrival", *CAUSE_COLUMNS}
@@ -125,11 +133,17 @@ def overall_cause_distribution(df: pd.DataFrame) -> pd.DataFrame:
     if total_weight <= 0:
         return pd.DataFrame(columns=columns)
 
+    cause_values = {column: pd.to_numeric(df[column], errors="coerce").fillna(0) for column in CAUSE_COLUMNS}
     rows = []
     for column, label in CAUSE_COLUMNS.items():
-        values = pd.to_numeric(df[column], errors="coerce").fillna(0)
-        share = float((values * weights).sum() / total_weight)
+        share = float((cause_values[column] * weights).sum() / total_weight)
         rows.append({"cause": label, "share": share})
+
+    # Complément à 100 par enregistrement, borné à 0 et sous la tolérance d'arrondi.
+    declared = sum(cause_values.values())
+    residual = (100 - declared).clip(lower=0)
+    residual = residual.where(residual > CAUSE_TOTAL_TOLERANCE, 0.0)
+    rows.append({"cause": UNALLOCATED_LABEL, "share": float((residual * weights).sum() / total_weight)})
 
     return pd.DataFrame(rows, columns=columns).sort_values("share", ascending=False).reset_index(drop=True)
 
@@ -233,9 +247,11 @@ def overview_highlights(df: pd.DataFrame) -> dict:
         }
 
     causes = overall_cause_distribution(df)
+    # La part non ventilée n'est pas une cause : on ne la désigne jamais comme dominante.
+    declared_causes = causes[causes["cause"] != UNALLOCATED_LABEL] if not causes.empty else causes
 
-    if not causes.empty and causes["share"].fillna(0).sum() > 0:
-        dominant = causes.iloc[0]
+    if not declared_causes.empty and declared_causes["share"].fillna(0).sum() > 0:
+        dominant = declared_causes.iloc[0]
         default["dominant_cause"] = {
             "title": "Cause la plus représentée",
             "text": (f"{dominant['cause']} arrive en tête avec une part pondérée " f"de {dominant['share']:.1f} % des causes de retard."),

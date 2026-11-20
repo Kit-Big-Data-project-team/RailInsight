@@ -319,10 +319,11 @@ if improvement > 0:
 else:
     st.warning("La Random Forest ne fait pas mieux que " "la méthode de référence sur cette période.")
 
+example_error = mae_model * 100
 st.caption(
-    "Une erreur de 4,51 points de pourcentage signifie "
-    "par exemple que le modèle peut prédire 15 % "
-    "alors que le taux réel est de 19,51 %. "
+    f"Une erreur de {example_error:.2f} points de pourcentage signifie "
+    f"par exemple que le modèle peut prédire 15 % "
+    f"alors que le taux réel est de {15 + example_error:.2f} %. "
     "Il s'agit d'une erreur moyenne, pas d'une "
     "marge de confiance garantie."
 )
