@@ -27,7 +27,7 @@ Pour apporter des éléments de réponse, l'application propose cinq angles de l
 4. **Examiner un trajet précis** en sélectionnant une liaison entre une gare de départ et une gare d'arrivée.
 5. **Anticiper les retards mensuels** en prévoyant le taux de retard d'une liaison TGV pour le mois suivant à partir des données historiques.
 
-Le projet couvre également toute la chaîne technique : récupération des données par API et mise à jour automatique de ces derniéres, préparation et nettoyage avec Python, stockage dans PostgreSQL, puis restitution dans une application Streamlit.
+Le projet couvre également toute la chaîne technique : récupération automatique (via cron job) des données par API et mise à jour automatique de ces derniéres, préparation et nettoyage avec Python, stockage dans PostgreSQL, puis restitution dans une application Streamlit.
 
 ## 2. L'application
 
@@ -152,7 +152,7 @@ La structure ci-dessous reprend les principaux dossiers et fichiers du dépôt. 
 RailInsight/
 │
 ├── .github/
-│   └── workflows/              # Workflows d'intégration continue
+│   └── workflows/              # Workflows d'intégration continue et de l'ETL
 │
 ├── .streamlit/
 │   └── config.toml             # Configuration de l'application Streamlit
@@ -212,13 +212,13 @@ RailInsight/
 | Graphiques | Plotly et graphiques natifs Streamlit |
 | Appels à l'API | Requests |
 | Accès à la base | SQLAlchemy et `psycopg2-binary` |
-| Base de données | PostgreSQL 17 (image Docker `postgres:17-alpine`) |
+| Base de données | PostgreSQL 17 (Supabase pour la version déployée / image Docker `postgres:17-alpine` pour la version en local) |
 | Configuration locale | `python-dotenv` et variables d'environnement |
 | Tests | Pytest et pytest-cov |
 | Qualité du code | Ruff et Black |
 | Documentation technique | Sphinx |
 | Conteneurisation | Docker et Docker Compose |
-| Intégration continue | GitHub Actions |
+| Intégration continue et automatisation de l'ETL | GitHub Actions |
 | Machine learning et prédiction | Scikit-learn (Random Forest Regressor) |
 | Cartographie interactive | PyDeck (fonds cartographiques OpenStreetMap / CARTO) |
 
