@@ -55,6 +55,21 @@ def test_overall_causes_are_weighted_by_number_of_late_trains():
     assert result.loc["Infrastructure", "share"] == 25.0
 
 
+def test_overall_causes_expose_the_unallocated_share():
+    """Le complément à 100 apparaît comme part non ventilée, sans renormalisation (RI-013)."""
+    row = {column: 0.0 for column in CAUSE_COLUMNS}
+    row.update({"date": "2026-01-01", "route": "Paris → Lyon", "scheduled": 100, "cancelled": 0, "late_arrival": 10})
+    # Deux causes déclarées = 60 % au total -> 40 % non ventilé.
+    row["cause_external"] = 40.0
+    row["cause_infra"] = 20.0
+
+    result = overall_cause_distribution(pd.DataFrame([row])).set_index("cause")
+
+    assert result.loc["Causes externes", "share"] == 40.0
+    assert result.loc["Infrastructure", "share"] == 20.0
+    assert result.loc["Part non ventilée dans les données", "share"] == 40.0
+
+
 def test_overview_highlights_compare_the_latest_three_months_to_the_previous_three():
     rows = []
     for month in range(1, 7):
