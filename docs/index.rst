@@ -24,6 +24,7 @@ source et de ses docstrings.
    :maxdepth: 2
    :caption: Documentation :
 
+   installation
    modules
    views
 

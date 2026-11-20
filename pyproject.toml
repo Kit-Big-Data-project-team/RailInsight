@@ -5,11 +5,9 @@ description = "Analyse exploratoire du CSV de régularité mensuelle des TGV"
 requires-python = ">=3.11"
 dependencies = [
     "pandas>=2.2,<4",
-    "matplotlib>=3.8,<4",
-    "jupyterlab>=4,<5",
-    "ipykernel>=6,<8",
     "streamlit>=1.66.0",
     "plotly>=7.1.0",
+    "pydeck>=0.9.0",
     "certifi>=2024.0.0",
     "filelock>=3.13.0",
     "pillow>=10.3.0",
@@ -40,6 +38,13 @@ dev = [
     "sphinx-design>=0.8.0",
     "sphinx-rtd-theme>=3.0.0",
 ]
+# Outils de notebook pour l'exploration ad hoc : hors exécution de l'application
+# et hors CI (ne pas installer par défaut).
+notebook = [
+    "matplotlib>=3.8,<4",
+    "jupyterlab>=4,<5",
+    "ipykernel>=6,<8",
+]
 
 [tool.ruff]
 line-length = 160
@@ -61,15 +66,16 @@ verbose = 1
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "--cov=src --cov-report=term-missing --cov-fail-under=80"
+addopts = "--cov=src --cov-report=term-missing --cov-fail-under=90"
 
 [tool.coverage.run]
 branch = true
 source = ["src"]
+omit = ["src/railinsight/data/inspect_prediction_data.py"]
 
 [tool.coverage.report]
 show_missing = true
-fail_under = 80
+fail_under = 90
 
 [tool.uv]
 override-dependencies = [

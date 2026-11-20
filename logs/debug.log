@@ -1,0 +1,9 @@
+2026-11-20 17:20:15,141 INFO railinsight.main: Demarrage du projet RailInsight...
+2026-11-20 17:20:15,142 INFO railinsight.database.init_db: Database regularite_tgv and tables created successfully
+2026-11-20 17:20:15,143 INFO railinsight.data.etl: Fetching data from API : <URL_SNCF_DATASET>
+2026-11-20 17:20:15,143 INFO railinsight.data.etl: Data successfully retrieved. HTTP Status : 200. Number of data : 12907
+2026-11-20 17:20:15,144 WARNING railinsight.data.etl: Doublons intra-lot ecartes (derniere version conservee) : 3
+2026-11-20 17:20:15,144 INFO railinsight.data.etl: Successfully upserted 12907 records.
+2026-11-20 17:20:15,144 INFO railinsight.main: Pipeline RailInsight termine avec succes.
+2026-11-20 17:20:15,144 ERROR railinsight.data.etl: API request timed out.
+2026-11-20 17:20:15,144 ERROR railinsight.data.etl: HTTP error occurred: 500 Server Error

@@ -1,0 +1,2 @@
+2026-11-20 17:20:15,144 ERROR railinsight.data.etl: API request timed out.
+2026-11-20 17:20:15,144 ERROR railinsight.data.etl: HTTP error occurred: 500 Server Error

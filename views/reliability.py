@@ -5,6 +5,8 @@ moins fiables, comparaison des services, et vue retards/annulations par liaison,
 avec un seuil minimal de trafic pour éviter les petits échantillons.
 """
 
+import logging
+
 import streamlit as st
 
 from railinsight.analysis.reliability import (
@@ -16,6 +18,11 @@ from railinsight.analysis.reliability import (
 from railinsight.data.loader import TGVDataset
 from railinsight.viz.reliability import reliability_bar, reliability_scatter
 
+logger = logging.getLogger(__name__)
+
+# Durée de vie du cache : la base est rafraîchie une fois par mois.
+CACHE_TTL = 3600
+
 COLS = ["route", "reliability_score", "late_rate", "cancellation_rate", "scheduled"]
 COL_LABELS = {
     "route": "Liaison",
@@ -26,7 +33,7 @@ COL_LABELS = {
 }
 
 
-@st.cache_data
+@st.cache_data(ttl=CACHE_TTL)
 def load() -> TGVDataset:
     return TGVDataset.from_db()
 
@@ -38,7 +45,12 @@ st.write(
     "Le seuil de trafic écarte les liaisons à très faible volume, peu représentatives."
 )
 
-ds = load()
+try:
+    ds = load()
+except Exception:
+    logger.exception("Impossible de charger les données de la Fiabilité des liaisons.")
+    st.error("Les données sont momentanément indisponibles. Réessayez ultérieurement.")
+    st.stop()
 if ds.df.empty:
     st.warning("Aucune donnée n'est disponible dans la base pour le moment.")
     st.stop()

@@ -3,7 +3,7 @@
 import pandas as pd
 import pytest
 
-from railinsight.analysis.prepare_prediction import prepare_prediction_data
+from railinsight.analysis.prepare_prediction import monthly_rate_table, prepare_prediction_data
 
 
 def make_data(months, liaison="PARIS -> LYON", service="National"):
@@ -131,3 +131,31 @@ def test_main_displays_prediction_summary(monkeypatch, capsys):
     assert "DONNEES PRETES POUR LE MODELE" in output
     assert "Dimensions" in output
     assert "Taux de retard" in output
+
+
+def test_monthly_rate_table_keeps_a_three_month_route():
+    """Une liaison à trois mois consécutifs reste prévisible (non filtrée sur les décalages)."""
+    df = make_data(["2026-07-01", "2026-08-01", "2026-09-01"])
+
+    table = monthly_rate_table(df)
+
+    assert len(table) == 3
+
+
+def test_monthly_rate_table_drops_fully_cancelled_months():
+    df = make_data(["2026-07-01", "2026-08-01", "2026-09-01"])
+    df.loc[df["date"] == pd.Timestamp("2026-08-01"), "cancelled"] = 100  # mois entièrement annulé
+
+    table = monthly_rate_table(df)
+
+    assert pd.Timestamp("2026-08-01") not in set(table["date"])
+
+
+def test_prepare_prediction_excludes_a_cancelled_target_month():
+    """Un mois entièrement annulé (taux indéfini) ne doit pas servir de cible d'entraînement."""
+    df = make_data(["2026-01-01", "2026-02-01", "2026-03-01", "2026-04-01", "2026-05-01"])
+    df.loc[df["date"] == pd.Timestamp("2026-05-01"), "cancelled"] = 100
+
+    result = prepare_prediction_data(df)
+
+    assert pd.Timestamp("2026-05-01") not in set(result["date"])

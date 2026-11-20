@@ -47,7 +47,16 @@ Prédiction des retards
 ----------------------
 
 Permet de sélectionner une liaison TGV et un service pour prévoir le taux de retard du mois suivant à l'aide d'un modèle Random Forest.
-La prévision est dynamique : si ``n`` représente le dernier mois disponible dans les données SNCF, le modèle prédit le mois ``n+1`` en utilisant 
-les taux de retard des trois derniers mois consécutifs observés (``n``, ``n-1`` et ``n-2``).
-La page affiche également une carte interactive des gares de départ et d'arrivée, reliées par un tracé indicatif, ainsi que l'évolution 
+La prévision est dynamique : si ``n`` représente le dernier mois disponible dans les données SNCF, le modèle prédit le mois ``n+1`` en utilisant
+les taux de retard des trois derniers mois consécutifs observés (``n``, ``n-1`` et ``n-2``). Le mois prévu est toujours ``n+1`` par rapport au dernier mois
+disponible dans **tout** le jeu de données, jamais au dernier mois propre à une liaison inactive.
+La page affiche également une carte interactive des gares de départ et d'arrivée, reliées par un tracé indicatif, ainsi que l'évolution
 historique des retards et une comparaison des performances du modèle avec une méthode de référence.
+
+Fiabilité de la prévision
+-------------------------
+
+Prolonge la prédiction ponctuelle par une évaluation honnête de sa fiabilité. La page encadre chaque prévision d'une **fourchette d'incertitude**
+(régression par quantiles, intervalle à 80 %), mesure la robustesse du modèle **mois par mois** par un backtesting glissant comparé à une méthode
+de référence, et vérifie que l'incertitude annoncée est **calibrée** (la part des valeurs réelles tombant dans l'intervalle doit avoisiner 80 %).
+La prévision du mois suivant reste disponible même pour une liaison ne comptant que trois mois consécutifs d'historique.

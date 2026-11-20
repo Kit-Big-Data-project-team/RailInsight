@@ -1,3 +1,9 @@
+"""Configuration de la connexion à la base de données PostgreSQL.
+
+Construit un moteur SQLAlchemy à partir des variables d'environnement de connexion
+(``DB_USERNAME``, ``DB_PASSWORD``, ``DB_HOST``, ``DB_PORT``, ``DB_NAME``).
+"""
+
 import os
 
 from dotenv import load_dotenv

@@ -10,12 +10,12 @@ from railinsight.data.etl import pipeline
 from railinsight.database.init_db import init_db
 from railinsight.logging_config import setup_logging
 
-setup_logging()
 logger = logging.getLogger(__name__)
 
 
 def main() -> None:
     """Exécute le pipeline de données RailInsight de bout en bout."""
+    setup_logging()
     logger.info("Démarrage du projet RailInsight...")
 
     try:

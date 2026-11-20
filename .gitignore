@@ -13,8 +13,11 @@ __pycache__/
 # Build de la documentation Sphinx (générée, non versionnée)
 docs/_build/
 docs/build/
-# Logs d'exécution (générés au runtime, non versionnés)
-logs/
+# Logs d'exécution : le dossier est ignoré, mais deux journaux de référence
+# sont livrés comme preuve de la journalisation (tout + erreurs seules).
+logs/*
+!logs/debug.log
+!logs/errors.log
 .DS_Store
 Thumbs.db
 .ruff_cache/

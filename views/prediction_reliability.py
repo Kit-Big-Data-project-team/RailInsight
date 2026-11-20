@@ -5,36 +5,56 @@ d'incertitude autour de chaque prévision, une robustesse mesurée mois par mois
 (backtesting glissant) et une vérification que l'intervalle est bien calibré.
 """
 
+import logging
+
 import pandas as pd
 import streamlit as st
 
 from railinsight.analysis.backtest import backtest_summary, walk_forward_backtest
 from railinsight.analysis.forecast import get_recent_rates
 from railinsight.analysis.forecast_intervals import fit_quantile_models, interval_coverage, predict_with_interval
-from railinsight.analysis.prepare_prediction import prepare_prediction_data
+from railinsight.analysis.prepare_prediction import monthly_rate_table, prepare_prediction_data
+from railinsight.data.loader import TGVDataset
 from railinsight.viz.forecast_intervals import backtest_error_line, forecast_interval_chart
 
+logger = logging.getLogger(__name__)
 
-@st.cache_data(show_spinner="Évaluation de la fiabilité de la prévision...")
+# Durée de vie du cache : la base est rafraîchie une fois par mois, on évite de
+# servir indéfiniment un instantané obsolète après une mise à jour.
+CACHE_TTL = 3600
+
+
+@st.cache_data(show_spinner="Évaluation de la fiabilité de la prévision...", ttl=CACHE_TTL)
 def load():
     """Prépare les données, rejoue le backtesting, mesure la calibration et entraîne les quantiles."""
-    df = prepare_prediction_data()
+    raw = TGVDataset.from_db().df
+    df = prepare_prediction_data(raw)
+    monthly = monthly_rate_table(raw)
     backtest = walk_forward_backtest(df, n_months=12)
     summary = backtest_summary(backtest)
     coverage = interval_coverage(df)
     models = fit_quantile_models(df)
-    return df, backtest, summary, coverage, models
+    reference = monthly["date"].max().to_period("M")
+    return df, monthly, backtest, summary, coverage, models, reference
 
 
-def liaison_forecast(df: pd.DataFrame, models: dict, liaison: str):
-    """Prévision du mois prochain avec intervalle pour une liaison (premier service exploitable)."""
-    for service in sorted(df.loc[df["liaison"] == liaison, "service"].unique()):
-        group = df[(df["liaison"] == liaison) & (df["service"] == service)].sort_values("date")
-        latest = group["date"].max().to_period("M")
-        rates = get_recent_rates(group, latest)
+def liaison_forecast(monthly: pd.DataFrame, models: dict, liaison: str, reference: pd.Period):
+    """Prévision du mois suivant la **référence globale**, avec intervalle, pour une liaison.
+
+    Le mois prévu est ``reference + 1`` (dernier mois disponible dans tout le jeu de
+    données), jamais le lendemain de la dernière observation propre à la liaison : une
+    liaison dont les données s'arrêtent il y a des années ne doit pas afficher un mois
+    passé comme s'il s'agissait d'une prévision future. Les taux récents proviennent de
+    la série mensuelle complète, ce qui permet de prévoir même une liaison ne comptant
+    que trois mois consécutifs. Une liaison sans trois mois consécutifs jusqu'à la
+    référence est déclarée indisponible.
+    """
+    next_month = (reference + 1).to_timestamp()
+    for service in sorted(monthly.loc[monthly["liaison"] == liaison, "service"].unique()):
+        group = monthly[(monthly["liaison"] == liaison) & (monthly["service"] == service)].sort_values("date")
+        rates = get_recent_rates(group, reference)
         if rates is None:
             continue
-        next_month = (latest + 1).to_timestamp()
         features = pd.DataFrame(
             [{"late_rate_lag1": rates[2], "late_rate_lag2": rates[1], "late_rate_lag3": rates[0], "late_rate_mean3": sum(rates) / 3, "month": next_month.month}]
         )
@@ -56,7 +76,12 @@ st.write(
     "**mois par mois** (backtesting) et vérifie que l'incertitude annoncée est **honnête** (calibration)."
 )
 
-df, backtest, summary, coverage, models = load()
+try:
+    df, monthly, backtest, summary, coverage, models, reference = load()
+except Exception:
+    logger.exception("Impossible de charger les données de la fiabilité de la prévision.")
+    st.error("Les données sont momentanément indisponibles. Réessayez ultérieurement.")
+    st.stop()
 
 st.subheader("Robustesse : backtesting glissant")
 st.caption(
@@ -88,8 +113,8 @@ if cov is not None:
         st.warning("L'intervalle est trop étroit (modèle trop confiant) : à élargir pour une incertitude honnête.")
 
 st.subheader("Prévision du mois prochain, avec fourchette")
-liaison = st.sidebar.selectbox("Liaison", sorted(df["liaison"].unique()))
-history, forecast = liaison_forecast(df, models, liaison)
+liaison = st.sidebar.selectbox("Liaison", sorted(monthly["liaison"].unique()))
+history, forecast = liaison_forecast(monthly, models, liaison, reference)
 if forecast is None:
     st.info("Pas de trois mois consécutifs récents pour cette liaison : prévision indisponible.")
 else:

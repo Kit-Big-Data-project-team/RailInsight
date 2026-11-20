@@ -19,19 +19,20 @@ La question qui guide ce travail est la suivante :
 
 **Les retards des TGV sont-ils des incidents isolés ou révèlent-ils des difficultés récurrentes ? Où, quand et pour quelles raisons surviennent-ils ?**
 
-Pour apporter des éléments de réponse, l'application propose cinq angles de lecture :
+Pour apporter des éléments de réponse, l'application propose six angles de lecture :
 
 1. **Comprendre la situation d'ensemble** grâce à des indicateurs clés et à une présentation des différentes pages.
 2. **Suivre les évolutions** des retards et des annulations au fil des mois, en observant notamment les causes déclarées et la saisonnalité.
 3. **Comparer les liaisons** à l'aide d'un classement des plus fiables et des moins fiables.
 4. **Examiner un trajet précis** en sélectionnant une liaison entre une gare de départ et une gare d'arrivée.
 5. **Anticiper les retards mensuels** en prévoyant le taux de retard d'une liaison TGV pour le mois suivant à partir des données historiques.
+6. **Mesurer la fiabilité de la prévision** à l'aide d'une fourchette d'incertitude, d'un backtesting mois par mois et d'une vérification de la calibration.
 
 Le projet couvre également toute la chaîne technique : récupération des données par API et mise à jour automatique de ces derniéres, préparation et nettoyage avec Python, stockage dans PostgreSQL, puis restitution dans une application Streamlit.
 
 ## 2. L'application
 
-L'application est organisée en cinq pages accessibles depuis la navigation Streamlit.
+L'application est organisée en six pages accessibles depuis la navigation Streamlit.
 
 | Page | Contenu |
 |---|---|
@@ -40,6 +41,7 @@ L'application est organisée en cinq pages accessibles depuis la navigation Stre
 | **Fiabilité des liaisons** | Classe les dix liaisons les plus fiables et les dix moins fiables selon leur score de fiabilité, avec un seuil minimal de trafic configurable. La page permet également de visualiser les taux de retard et d'annulation par liaison en tenant compte du volume de circulation, de comparer les services nationaux et internationaux et de consulter les tableaux détaillés des classements. |
 | **Mon trajet** | Permet de sélectionner une liaison et une période pour consulter ses indicateurs historiques : taux d'annulation, taux de retard, taux de perturbation et retard moyen à l'arrivée. La page présente également la répartition des issues sur une base de 100 circulations prévues, compare les douze derniers mois aux douze mois précédents lorsque les données le permettent, compare les deux sens de circulation et affiche les causes déclarées des retards. |
 | **Prédiction des retards** | Permet de prévoir automatiquement le taux de retard du mois n+1, où n correspond au dernier mois disponible dans les données SNCF, à partir des trois derniers mois observés. La page utilise un modèle Random Forest et présente une carte interactive des liaisons TGV, les prévisions, l'évolution historique des retards et une comparaison des performances du modèle avec une méthode de référence. |
+| **Fiabilité de la prévision** | Évalue la confiance à accorder à la prévision : une fourchette d'incertitude (intervalle à 80 % par régression de quantiles) autour de chaque prévision, un backtesting glissant mois par mois comparé à une méthode de référence, et une vérification de la calibration (la part des valeurs réelles tombant dans l'intervalle doit avoisiner 80 %). Le mois prévu est toujours n+1 par rapport au dernier mois disponible dans l'ensemble du jeu de données. |
 
 Les visualisations sont réalisées avec **Plotly**, **Streamlit** et **PyDeck**. Les pages chargent les données depuis PostgreSQL et utilisent une couche commune de préparation afin de conserver les mêmes noms de colonnes et les mêmes définitions d'indicateurs d'une page à l'autre.
 
@@ -128,6 +130,7 @@ RailInsight repose sur une architecture organisée en plusieurs couches : collec
        Vue d'ensemble | Historique
        Fiabilité      | Mon trajet
        Prédiction des retards
+       Fiabilité de la prévision
 ```
 
 Le pipeline commence dans `src/railinsight/main.py`, qui initialise la base de données et lance le processus ETL.
@@ -140,7 +143,7 @@ Les données sont ensuite exploitées par deux couches :
 - **`analysis/`** : calcule les indicateurs, agrégations, classements et comparaisons.
 - **`viz/`** : regroupe les fonctions de visualisation, notamment les graphiques Plotly et la carte interactive PyDeck. Le module `theme.py` centralise les couleurs et le thème graphique commun.
 
-Enfin, le dossier `views/` regroupe les cinq pages Streamlit, qui utilisent ces couches pour présenter les résultats.
+Enfin, le dossier `views/` regroupe les six pages Streamlit, qui utilisent ces couches pour présenter les résultats.
 
 Cette architecture sépare la collecte, le stockage, l'analyse et la visualisation, tout en favorisant la réutilisation du code.
 
@@ -188,7 +191,8 @@ RailInsight/
 │   ├── history.py              # Historique et évolution
 │   ├── reliability.py          # Fiabilité des liaisons
 │   ├── trip.py                 # Analyse d'une liaison
-│   └── prediction.py           # Prédiction des retards et carte interactive
+│   ├── prediction.py           # Prédiction des retards et carte interactive
+│   └── prediction_reliability.py  # Fiabilité de la prévision (intervalles, backtesting)
 │
 ├── .dockerignore               # Fichiers exclus de la construction Docker
 ├── .env.example                # Exemple de variables d'environnement
@@ -264,10 +268,10 @@ DB_PASSWORD=mot_de_passe
 DB_HOST=db
 DB_PORT=5432
 DB_NAME=railinsight
-URl_SNCF_DATASET=https://ressources.data.sncf.com/api/explore/v2.1/catalog/datasets/regularite-mensuelle-tgv-aqst/exports/json
+URL_SNCF_DATASET=https://ressources.data.sncf.com/api/explore/v2.1/catalog/datasets/regularite-mensuelle-tgv-aqst/exports/json
 ```
 
-Les valeurs `railinsight` et `mot_de_passe` sont des exemples : vous pouvez choisir vos propres identifiants. Le nom de variable `URl_SNCF_DATASET` est écrit exactement comme dans le code actuel et dans `.env.example` ; il faut conserver cette casse, même si elle peut sembler inhabituelle.
+Les valeurs `railinsight` et `mot_de_passe` sont des exemples : vous pouvez choisir vos propres identifiants. La variable de l'URL SNCF s'appelle désormais `URL_SNCF_DATASET` ; l'ancien nom mal orthographié `URl_SNCF_DATASET` reste accepté par compatibilité, donc les deux fonctionnent.
 
 Dans le réseau Docker Compose, l'application se connecte à PostgreSQL avec `DB_HOST=db` : `db` est le nom du service déclaré dans `docker-compose.yml`. Le port `5432` est publié sur la machine hôte et le port `8501` est utilisé pour l'application Streamlit.
 
@@ -401,7 +405,9 @@ Pour appliquer automatiquement le formatage Black :
 uv run black .
 ```
 
-Les workflows GitHub Actions du dépôt permettent d'automatiser une partie des contrôles du projet. Les dépendances de développement (tests, qualité et documentation) sont déclarées dans `pyproject.toml` et verrouillées avec `uv.lock`.
+La suite de tests est **autonome** : les appels à l'API SNCF sont simulés, et les tests utilisent une base SQLite temporaire. Elle ne dépend donc d'aucun service externe. La couverture est contrôlée automatiquement avec un **seuil minimal de 90 %** (`--cov-fail-under=90`).
+
+Les workflows GitHub Actions du dépôt automatisent ces contrôles (Ruff, Black, interrogate, pytest avec couverture, pip-audit) et **construisent la documentation Sphinx** à chaque exécution. Les dépendances de développement (tests, qualité et documentation) sont déclarées dans `pyproject.toml` et verrouillées avec `uv.lock`.
 
 ## 10. Logs et documentation technique
 
@@ -410,7 +416,9 @@ La configuration de journalisation se trouve dans `src/railinsight/logging_confi
 - `logs/debug.log` pour les événements à partir du niveau DEBUG ;
 - `logs/errors.log` pour les erreurs à partir du niveau ERROR.
 
-Le dossier `docs/` est prévu pour la documentation du projet. La configuration Sphinx et les dépendances associées sont déclarées dans le dépôt ; les documents de présentation et la documentation du dataset peuvent également y être déposés pour centraliser les livrables.
+Deux journaux de référence (`logs/debug.log` et `logs/errors.log`) sont versionnés comme livrables, afin d'illustrer concrètement la journalisation ; le reste du dossier `logs/` reste ignoré (contenu généré au runtime).
+
+Le dossier `docs/` contient la documentation technique Sphinx (sources `conf.py`, `index.rst`, `modules.rst`, `views.rst`, `installation.rst`). Elle est **construite automatiquement par la CI** (artefact `sphinx-html` téléchargeable depuis chaque exécution GitHub Actions) et peut être générée en local avec `uv run sphinx-build -b html docs docs/_build/html`.
 
 ## 11. Livrables du projet
 
