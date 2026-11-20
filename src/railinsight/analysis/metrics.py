@@ -4,6 +4,13 @@ Calcule les indicateurs de régularité, les retards et les annulations.
 
 Ces fonctions sont communes à toutes les pages : chaque tâche s'appuie sur ce
 socle plutôt que de recoder ses propres taux, pour garder des définitions cohérentes.
+
+Biais à connaître : un mois dont le dénominateur est nul (ex. mois entièrement
+annulé) produit un taux manquant et non un zéro. Ces mois sont donc écartés des
+moyennes et des recherches de maximum. L'exclusion se fait indicateur par
+indicateur : un mois peut compter pour le taux d'annulation tout en étant absent du
+taux de retard. Les agrégats restent donc des moyennes sur les mois *disponibles*,
+ce qui peut introduire un léger biais si les mois manquants ne sont pas aléatoires.
 """
 
 import pandas as pd

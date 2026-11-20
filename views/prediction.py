@@ -7,11 +7,15 @@ from sklearn.metrics import mean_absolute_error
 
 from railinsight.analysis.forecast import get_recent_rates
 from railinsight.analysis.prediction_model import FEATURES, create_model
-from railinsight.analysis.prepare_prediction import prepare_prediction_data
+from railinsight.analysis.prepare_prediction import monthly_rate_table, prepare_prediction_data
+from railinsight.data.loader import TGVDataset
 from railinsight.viz.station_map import get_station_coordinates
 
+# Durée de vie du cache : la base est rafraîchie une fois par mois.
+CACHE_TTL = 3600
 
-@st.cache_data(show_spinner="Calcul des prédictions...")
+
+@st.cache_data(show_spinner="Calcul des prédictions...", ttl=CACHE_TTL)
 def load_predictions():
     """Évalue le modèle et calcule les prévisions du mois suivant.
 
@@ -29,7 +33,11 @@ def load_predictions():
             - mae_model : erreur absolue moyenne de la Random Forest.
             - mae_baseline : erreur absolue moyenne de la référence.
     """
-    df = prepare_prediction_data()
+    raw = TGVDataset.from_db().df
+    df = prepare_prediction_data(raw)
+    # Série complète (non filtrée sur les décalages) : sert de source aux taux récents
+    # de la prévision, y compris pour une liaison ne comptant que trois mois.
+    monthly = monthly_rate_table(raw)
 
     # Évaluation historique : entraînement avant 2025.
     train = df[df["date"] < "2025-01-01"]
@@ -48,12 +56,13 @@ def load_predictions():
     future_model = create_model()
     future_model.fit(df[FEATURES], df["late_rate"])
 
-    latest_month = df["date"].max().to_period("M")
+    # Référence globale : dernier mois disponible dans tout le jeu de données.
+    latest_month = monthly["date"].max().to_period("M")
     next_month = latest_month + 1
 
     forecasts = []
 
-    for (liaison, service), group in df.groupby(["liaison", "service"]):
+    for (liaison, service), group in monthly.groupby(["liaison", "service"]):
         group = group.sort_values("date")
 
         rates = get_recent_rates(group, latest_month)

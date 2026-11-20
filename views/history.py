@@ -35,8 +35,11 @@ from railinsight.viz.history import (
 
 logger = logging.getLogger(__name__)
 
+# Durée de vie du cache : la base est rafraîchie une fois par mois.
+CACHE_TTL = 3600
 
-@st.cache_data
+
+@st.cache_data(ttl=CACHE_TTL)
 def load() -> TGVDataset:
     """Charge les données partagées depuis PostgreSQL et met le résultat en cache."""
     return TGVDataset.from_db()
@@ -48,7 +51,12 @@ st.write(
     "et saisonnalité. Choisissez une liaison dans le menu, ou consultez toutes les liaisons disponibles."
 )
 
-ds = load()
+try:
+    ds = load()
+except Exception:
+    logger.exception("Impossible de charger les données de l'Historique.")
+    st.error("Les données sont momentanément indisponibles. Réessayez ultérieurement.")
+    st.stop()
 options = ["Toutes les liaisons disponibles"] + ds.routes()
 choix = st.sidebar.selectbox("Liaison", options)
 

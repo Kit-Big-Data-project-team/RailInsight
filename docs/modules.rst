@@ -40,6 +40,27 @@ Analyses et calculs
 .. automodule:: railinsight.analysis.trip
    :members:
 
+Prédiction et prévision
+-----------------------
+
+.. automodule:: railinsight.analysis.prepare_prediction
+   :members:
+
+.. automodule:: railinsight.analysis.forecast
+   :members:
+
+.. automodule:: railinsight.analysis.prediction_model
+   :members:
+
+.. automodule:: railinsight.analysis.train_prediction
+   :members:
+
+.. automodule:: railinsight.analysis.forecast_intervals
+   :members:
+
+.. automodule:: railinsight.analysis.backtest
+   :members:
+
 Visualisations
 --------------
 
@@ -55,6 +76,18 @@ Visualisations
 .. automodule:: railinsight.viz.trip
    :members:
 
+.. automodule:: railinsight.viz.forecast_intervals
+   :members:
+
+.. automodule:: railinsight.viz.station_map
+   :members:
+
 .. automodule:: railinsight.viz.theme
+   :members:
+
+Configuration et journalisation
+-------------------------------
+
+.. automodule:: railinsight.logging_config
    :members:
 

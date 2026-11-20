@@ -20,8 +20,11 @@ from railinsight.viz.trip import causes_bar, comparison_bars, outcomes_bar
 
 logger = logging.getLogger(__name__)
 
+# Durée de vie du cache : la base est rafraîchie une fois par mois.
+CACHE_TTL = 3600
 
-@st.cache_data
+
+@st.cache_data(ttl=CACHE_TTL)
 def load() -> TGVDataset:
     """Charge le contrat de données partagé depuis PostgreSQL, sans le modifier."""
     return TGVDataset.from_db()

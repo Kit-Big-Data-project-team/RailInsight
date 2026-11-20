@@ -1,3 +1,10 @@
+"""Pipeline ETL : récupération des données SNCF, nettoyage et chargement idempotent.
+
+Interroge l'API open data SNCF (régularité mensuelle des TGV), nettoie les
+enregistrements puis les insère en base par UPSERT (idempotent), avec une petite
+fenêtre de reprise pour rattraper les rectifications publiées sur les mois récents.
+"""
+
 import logging
 import os
 import sys
@@ -24,6 +31,16 @@ KEY = ["date", "service", "gare_depart", "gare_arrivee"]
 # de rattraper d'éventuelles rectifications publiées par la SNCF sur un mois récent.
 # Combiné à l'UPSERT, cela reste idempotent (réimporter les mêmes données ne change rien).
 RESYNC_MONTHS = 2
+
+
+def dataset_url() -> str | None:
+    """Adresse de l'API du jeu de données SNCF.
+
+    Lit en priorité ``URL_SNCF_DATASET`` (nom correct) et, à défaut, l'ancien nom mal
+    orthographié ``URl_SNCF_DATASET`` conservé par compatibilité avec les secrets déjà
+    configurés. Aucune rupture : les deux noms fonctionnent.
+    """
+    return os.getenv("URL_SNCF_DATASET") or os.getenv("URl_SNCF_DATASET")
 
 
 def _months_before(reference: date, months: int) -> date:
@@ -167,7 +184,7 @@ def pipeline(engine: Engine | None):
         reference = last_record_date if isinstance(last_record_date, date) else date.fromisoformat(str(last_record_date)[:10])
         since = _months_before(reference, RESYNC_MONTHS)
 
-    api_url = os.getenv("URl_SNCF_DATASET")
+    api_url = dataset_url()
     data = fetch_data(api_url, since)
 
     if data is None:

@@ -81,8 +81,10 @@ def nettoyer_donnees(data: list[dict] | pd.DataFrame) -> pd.DataFrame:
             # pour protéger les champs obligatoires testés unitairement (ex: retard_moyen_depart=None)
             colonnes_vides = []
         else:
-            # Pour le vrai dataset ou les jeux de données normaux (>= 5 lignes), application de la règle des 90%
-            colonnes_vides = pourcentage_nan[pourcentage_nan > 90.0].index.tolist()
+            # Règle des 90 % de valeurs manquantes, mais jamais sur les colonnes
+            # contractuelles (COLUMNS) : une cause déclarée presque toujours vide reste
+            # attendue par le schéma et ne doit pas disparaître silencieusement.
+            colonnes_vides = [col for col in pourcentage_nan[pourcentage_nan > 90.0].index if col not in COLUMNS]
 
         df_clean = df_clean.drop(columns=colonnes_vides, errors="ignore")
         logger.info(f"Colonnes supprimées automatiquement : {colonnes_vides}")

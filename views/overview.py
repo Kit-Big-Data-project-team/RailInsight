@@ -1,5 +1,7 @@
 """Page d'accueil : synthèse de la ponctualité des liaisons TGV du jeu de données."""
 
+import logging
+
 import streamlit as st
 
 from railinsight.analysis.overview import (
@@ -13,8 +15,13 @@ from railinsight.analysis.overview import (
 from railinsight.data.loader import TGVDataset
 from railinsight.viz.overview import causes_bar, network_trend_line, seasonality_heatmap
 
+logger = logging.getLogger(__name__)
 
-@st.cache_data
+# Durée de vie du cache : la base est rafraîchie une fois par mois.
+CACHE_TTL = 3600
+
+
+@st.cache_data(ttl=CACHE_TTL)
 def load() -> TGVDataset:
     """Charge le dataset préparé depuis PostgreSQL."""
     return TGVDataset.from_db()
@@ -32,7 +39,12 @@ leur évolution dans le temps, leurs principales causes et les liaisons les plus
 Les chiffres racontent une histoire ; à vous de l'explorer.
 """)
 
-ds = load()
+try:
+    ds = load()
+except Exception:
+    logger.exception("Impossible de charger les données de la Vue d'ensemble.")
+    st.error("Les données sont momentanément indisponibles. Réessayez ultérieurement.")
+    st.stop()
 df = ds.df
 
 if df.empty:

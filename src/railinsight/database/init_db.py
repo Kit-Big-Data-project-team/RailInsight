@@ -1,3 +1,10 @@
+"""Initialisation du schéma de la base de données.
+
+Crée les tables définies dans ``db_table`` si elles n'existent pas déjà. Toute erreur
+d'initialisation est journalisée puis relancée : une base inaccessible ne doit jamais
+passer pour un succès.
+"""
+
 import logging
 
 from railinsight.database import db_table

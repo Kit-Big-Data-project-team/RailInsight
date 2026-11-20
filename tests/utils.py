@@ -9,7 +9,8 @@ from railinsight.data.data_cleaning import COLUMNS
 
 load_dotenv()
 
-API_URL = os.getenv("URl_SNCF_DATASET")
+# Nom correct en priorité, ancien nom mal orthographié conservé par compatibilité.
+API_URL = os.getenv("URL_SNCF_DATASET") or os.getenv("URl_SNCF_DATASET")
 
 
 def make_record(**overrides) -> dict:
